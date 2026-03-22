@@ -11,10 +11,11 @@ class AppTest {
         assertTrue(true);
     }
 
+    @DisplayName("Useless test to test JaCoCo")
     @Test
-    void displayTextTest() {
+    void testUselessMethod() {
         App app = new App();
-        assertEquals("Welcome to FDU Battleship!", app.DisplayText());
+        assertEquals(5, app.uselessMethodToTestJaCoCo(2, 3));
     }
 
     @DisplayName("Useless test to test JaCoCo")
