@@ -15,6 +15,19 @@ public class App
         return "Welcome to FDU Battleship!";
     }
 
+    /**
+     * USELESS METHODS FOR JACOCO TEST
+     */
+    public int uselessMethodToTestJaCoCo(int a, int b) {
+        return a + b;
+    }
+
+    public String uselessMethodGetGameTitle() {
+        String title = "FDU Battleship";
+        String version = "v1.0";
+        return title + " " + version;
+    }
+
     public static void main( String[] args )
     {
         App app = new App();
