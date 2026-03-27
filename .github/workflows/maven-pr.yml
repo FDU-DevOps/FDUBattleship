@@ -48,6 +48,7 @@ jobs:
       # Post coverage results as PR comment and workflow summary
       # Fails if overall or changed files coverage drops below 70%
       - name: Publish JaCoCo Coverage Report
+        id: jacoco
         uses: madrapps/jacoco-report@v1.7.2
         with:
           paths: target/site/jacoco/jacoco.xml
@@ -59,3 +60,14 @@ jobs:
           pass-emoji: '😊'
           fail-emoji: '😢'
           comment-type: both
+          
+      - name: Fail if coverage below threshold
+        if: always()
+        run: |
+          OVERALL="${{ steps.jacoco.outputs.coverage-overall }}"
+          CHANGED="${{ steps.jacoco.outputs.coverage-changed-files }}"
+          if (( $(echo "$OVERALL < 70" | bc -l) )) || \
+             (( $(echo "$CHANGED < 70" | bc -l) )); then
+            echo "::error::Coverage thresholds not met! Overall: $OVERALL%, Changed: $CHANGED%"
+            exit 1
+          fi
