@@ -16,7 +16,7 @@ public class App
     }
 
     /**
-     * USELESS METHODS FOR JACOCO TEST
+     * USELESS METHODS FOR JACOCO TEST!
      */
     public int uselessMethodToTestJaCoCo(int a, int b) {
         return a + b;
