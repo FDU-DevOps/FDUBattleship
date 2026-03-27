@@ -10,6 +10,10 @@ permissions:
   contents: read
   pull-requests: write
 
+# Create env var to hold the min coverage
+env:
+  MIN_COVERAGE: 70
+
 jobs:
   quality-check:
     runs-on: ubuntu-latest
@@ -46,16 +50,35 @@ jobs:
           path: target/site/jacoco/
 
       # Post coverage results as PR comment and workflow summary
-      # Fails if overall or changed files coverage drops below 70%
+      # Fails if overall or changed files coverage drops below MIN_COVERAGE
       - name: Publish JaCoCo Coverage Report
+        id: jacoco
         uses: madrapps/jacoco-report@v1.7.2
         with:
           paths: target/site/jacoco/jacoco.xml
           token: ${{ secrets.GITHUB_TOKEN }}
-          min-coverage-overall: 70
-          min-coverage-changed-files: 70
+          min-coverage-overall: ${{ env.MIN_COVERAGE }}
+          min-coverage-changed-files: ${{ env.MIN_COVERAGE }}
           update-comment: true
           title: "Coverage Report"
           pass-emoji: '😊'
           fail-emoji: '😢'
           comment-type: both
+
+      - name: Fail if coverage below threshold
+        if: always()
+        # Reuse the env var so bash can read it as $MIN_COVERAGE
+        env:
+          MIN_COVERAGE: ${{ env.MIN_COVERAGE }}
+        run: |
+          OVERALL="${{ steps.jacoco.outputs.coverage-overall }}"
+          CHANGED="${{ steps.jacoco.outputs.coverage-changed-files }}"
+          
+          # bc -l handles decimal comparison since bash can't do floats natively
+          # if either value is below the threshold, print an error and fail the workflow
+          
+          if (( $(echo "$OVERALL < $MIN_COVERAGE" | bc -l) )) || \
+             (( $(echo "$CHANGED < $MIN_COVERAGE" | bc -l) )); then
+            echo "::error::Coverage thresholds not met! Overall: $OVERALL%, Changed: $CHANGED%"
+            exit 1
+          fi
