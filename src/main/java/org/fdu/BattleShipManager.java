@@ -38,7 +38,7 @@ public class BattleShipManager
         // Normalize and check format for the guess using regex
         String guess = playerGuess.toUpperCase().trim();
         if (!guess.matches("^[A-J](10|[1-9])$")) {
-             guessStatus = "Format Error: Column needs to be A-J and Row needs to 1-10.";
+             guessStatus = "Format Error: Column needs to be A-J and Row needs to 1-10";
             return new PlayerDTO(player.grid(), validationResult, guessStatus);
         }
 
