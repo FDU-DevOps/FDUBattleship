@@ -44,8 +44,6 @@ class BattleShipManagerTest {
         String flippedFormat = "5A";
         player = manager.validatePlayerGuess(flippedFormat, player);
         assertFalse(player.isValidGuess(), "Guess should be in the correct col,row format");
-
-
     }
 
 
