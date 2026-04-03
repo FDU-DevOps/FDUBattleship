@@ -46,7 +46,7 @@ public class BattleBoard
             }
         }
 
-        return new PlayerDTO(grid);
+        return new PlayerDTO(grid, true, "");
     }
     /**
      * Prints the current board state to the console.

@@ -30,6 +30,7 @@ public class BattleShipManager
         if (playerGuess == null) {
             validationResult = false;
              guessStatus = "Sorry the guess is invalid";
+            return new PlayerDTO(player.grid(), validationResult, guessStatus);
         }
 
         // Normalize and check format
@@ -37,6 +38,7 @@ public class BattleShipManager
         if (!guess.matches("^[A-J](10|[1-9])$")) {
              guessStatus = "Sorry the guess is invalid";
             validationResult = false;
+            return new PlayerDTO(player.grid(), validationResult, guessStatus);
         }
 
         // Extract coordinates
@@ -47,6 +49,7 @@ public class BattleShipManager
         {
             guessStatus = "Sorry the guess is invalid";
             validationResult = false;
+            return new PlayerDTO(player.grid(), validationResult, guessStatus);
         }
 
         return new PlayerDTO(player.grid(), validationResult, guessStatus);
