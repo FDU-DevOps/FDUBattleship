@@ -1,5 +1,10 @@
 package org.fdu;
 
+/**
+ *  Service Class Responsible for initializing the game and being an entry point for the game
+ *  Processes anything relating to the game (i.e. guesses, validation)
+ *  Tracks and update game state based on multiple factors
+ */
 public class BattleShipManager
 {
     /**
@@ -22,6 +27,7 @@ public class BattleShipManager
     /** Validates User Coordinate Guess - returns isValid object in DTO <br>
      * Scope: Guess is normalized before it comes in
      * @param playerGuess - guess coming in from the system
+     * @param player - passing playerDTO to be updated based on validity of the guess
      * @return isValid DTO Field is returned as true or false
      */
     public PlayerDTO validatePlayerGuess(String playerGuess,  PlayerDTO player)
