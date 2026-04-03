@@ -34,25 +34,38 @@ public class AttackProcessor {
      */
 
     public PlayerDTO[] processAttack(int row, int col, PlayerDTO humanDTO, PlayerDTO computerDTO) {
+        // Work on copies so the original immutable DTOs are never mutated
         Cell[][] newShipGrid     = copyGrid(computerDTO.grid());
         Cell[][] newTrackingGrid = copyGrid(humanDTO.grid());
 
+        // Read what occupies the targeted cell on the computer's ship grid
         Cell target = newShipGrid[row][col];
 
         if (target == Cell.SHIP) {
+            // Mark the cell as HIT on both grids so both DTOs stay in sync
             newShipGrid[row][col]     = Cell.HIT;
             newTrackingGrid[row][col] = Cell.HIT;
 
+            // guessesLeft is preserved unchanged, a win ends the game before it matters
             PlayerDTO updatedHuman    = new PlayerDTO(newTrackingGrid, humanDTO.guessesLeft(), GameStatus.WIN);
+            // Computer carries no meaningful status, IN_PROGRESS is used as a neutral placeholder
             PlayerDTO updatedComputer = new PlayerDTO(newShipGrid, 0, GameStatus.IN_PROGRESS);
             return new PlayerDTO[]{ updatedHuman, updatedComputer };
 
         } else {
+            // No ship was hit, mark the cell as MISS on both grids
             newShipGrid[row][col]     = Cell.MISS;
             newTrackingGrid[row][col] = Cell.MISS;
 
+            // Consume one guess and decide whether the player has just run out
             int guessesLeft = humanDTO.guessesLeft() - 1;
-            GameStatus status = guessesLeft == 0 ? GameStatus.LOSS : GameStatus.IN_PROGRESS;
+
+            GameStatus status;
+            if (guessesLeft == 0) {
+                status = GameStatus.LOSS;
+            } else {
+                status = GameStatus.IN_PROGRESS;
+            };
 
             PlayerDTO updatedHuman    = new PlayerDTO(newTrackingGrid, guessesLeft, status);
             PlayerDTO updatedComputer = new PlayerDTO(newShipGrid, 0, GameStatus.IN_PROGRESS);
@@ -76,6 +89,7 @@ public class AttackProcessor {
     private Cell[][] copyGrid(Cell[][] original) {
         Cell[][] copy = new Cell[original.length][original[0].length];
         for (int i = 0; i < original.length; i++) {
+            // clone() is safe here because Cell is an enum, so its values are shared constants
             copy[i] = original[i].clone();
         }
         return copy;

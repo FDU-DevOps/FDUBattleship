@@ -15,11 +15,15 @@ import java.util.Scanner;
 
 public class BattleshipManager {
 
+    // Fixed board dimension, both axes are 10x10 throughout the entire game
     private static final int SIZE = 10;
+    // Total number of attacks the player is allowed before the game is lost
     private static final int MAX_GUESSES = 10;
 
+    // Reassigned each turn with the updated DTO returned by AttackProcessor, not mutated in place
     private PlayerDTO humanDTO;
     private PlayerDTO computerDTO;
+    // Stateless, shared across all turns, no need to recreate each iteration
     private final BattleBoard battleBoard;
     private final AttackProcessor attackProcessor;
 
@@ -40,17 +44,23 @@ public class BattleshipManager {
         battleBoard     = new BattleBoard();
         attackProcessor = new AttackProcessor();
 
+        // Fill every cell with WATER first, then overwrite one cell with the ship
         Cell[][] shipGrid = new Cell[SIZE][SIZE];
         for (Cell[] row : shipGrid) java.util.Arrays.fill(row, Cell.WATER);
+
+        // Pick a random cell inside the 10x10 bounds for the ship placement
         Random rand = new Random();
         shipRow = rand.nextInt(SIZE);
         shipCol = rand.nextInt(SIZE);
         shipGrid[shipRow][shipCol] = Cell.SHIP;
         computerDTO = new PlayerDTO(shipGrid, 0, GameStatus.IN_PROGRESS);
 
+        // Human starts with a fully blank tracking grid and the maximum allowed guesses
         Cell[][] trackingGrid = new Cell[SIZE][SIZE];
         for (Cell[] row : trackingGrid) java.util.Arrays.fill(row, Cell.WATER);
         humanDTO = new PlayerDTO(trackingGrid, MAX_GUESSES, GameStatus.IN_PROGRESS);
+
+        // Debug line, remove before shipping to players
         System.out.println("Ship is at: " + (char)('A' + shipCol) + (shipRow + 1));
     }
 
@@ -76,17 +86,21 @@ public class BattleshipManager {
             System.out.print("Enter coordinate (e.g. A1): ");
 
             String input = scanner.nextLine().trim().toUpperCase();
+            // First character is the column letter, subtract 'A' to convert it to a 0-based index
             int col = input.charAt(0) - 'A';
+            // Remaining characters are the row number, subtract 1 to convert from 1-based to 0-based
             int row = Integer.parseInt(input.substring(1)) - 1;
 
             PlayerDTO[] result = attackProcessor.processAttack(row, col, humanDTO, computerDTO);
-            humanDTO = result[0];
+            // Unpack the returned array to replace both DTOs with their updated versions
+            humanDTO    = result[0];
             computerDTO = result[1];
 
-            if (humanDTO.grid()[row][col] == Cell.HIT) System.out.println("Hit!");
-            if (humanDTO.grid()[row][col] == Cell.MISS) System.out.println("Miss!");
-            if (humanDTO.gameStatus() == GameStatus.WIN) System.out.println("You sunk my battleship! You win!");
-            if (humanDTO.gameStatus() == GameStatus.LOSS) System.out.println("No guesses remaining. You lose!");
+            // Read the updated tracking grid to determine what to print, not the raw attack outcome
+            if (humanDTO.grid()[row][col] == Cell.HIT)        System.out.println("Hit!");
+            if (humanDTO.grid()[row][col] == Cell.MISS)       System.out.println("Miss!");
+            if (humanDTO.gameStatus() == GameStatus.WIN)      System.out.println("You sunk my battleship! You win!");
+            if (humanDTO.gameStatus() == GameStatus.LOSS)     System.out.println("No guesses remaining. You lose!");
         }
     }
 }

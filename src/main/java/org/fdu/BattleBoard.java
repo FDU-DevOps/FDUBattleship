@@ -1,5 +1,4 @@
 package org.fdu;
-import java.util.Scanner;
 
 /**
  * Stateless renderer for the Battleship tracking grid.
@@ -25,11 +24,14 @@ public class BattleBoard {
      */
 
     public void displayBoard(Cell[][] trackingGrid) {
+        // Print column labels before the first row so they stay aligned with the grid
         printHeader();
         for (int row = 0; row < 10; row++) {
+            // Row numbers are 1-based for the player, while the array is 0-based internally
             System.out.printf("%2d", row + 1);
             for (int col = 0; col < 10; col++) {
                 Cell cell = trackingGrid[row][col];
+                // SHIP is intentionally rendered as [~] to keep ship positions hidden from the player
                 if (cell == Cell.HIT)       System.out.print("[X]");
                 else if (cell == Cell.MISS) System.out.print("[O]");
                 else                        System.out.print("[~]");
@@ -49,6 +51,7 @@ public class BattleBoard {
      */
 
     private void printHeader() {
+        // Two spaces match the "%2d" row number width in displayBoard, keeping columns aligned
         System.out.print("  ");
         for (char c = 'A'; c <= 'J'; c++) {
             System.out.printf("[%c]", c);

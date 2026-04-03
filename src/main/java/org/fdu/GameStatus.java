@@ -8,6 +8,7 @@ package org.fdu;
  * after each turn to determine whether to continue the game loop.
  * </p>
  */
+
 public enum GameStatus {
     IN_PROGRESS,
     WIN,
