@@ -26,21 +26,19 @@ public class BattleShipManager
      */
     public PlayerDTO validatePlayerGuess(String playerGuess,  PlayerDTO player)
     {
-        boolean validationResult = true;
-        String guessStatus = "";
+        boolean validationResult = false; // Assume guess is false until it can be checked to be true
+        String guessStatus;
 
         // Check that playerGuess is not NUll
         if (playerGuess == null) {
-            validationResult = false;
-             guessStatus = "Sorry the guess is invalid";
+             guessStatus = "Input Error: Missing User Input";
             return new PlayerDTO(player.grid(), validationResult, guessStatus);
         }
 
         // Normalize and check format for the guess using regex
         String guess = playerGuess.toUpperCase().trim();
         if (!guess.matches("^[A-J](10|[1-9])$")) {
-             guessStatus = "Sorry the guess is invalid";
-            validationResult = false;
+             guessStatus = "Format Error: Column needs to be A-J and Row needs to 1-10.";
             return new PlayerDTO(player.grid(), validationResult, guessStatus);
         }
 
@@ -49,13 +47,24 @@ public class BattleShipManager
         int col = Integer.parseInt(guess.substring(1)) - 1;
 
         // Check the enum in the cell
-        if (player.grid()[row][col] != Cell.WATER)
-        {
-            guessStatus = "Sorry the guess is invalid";
-            validationResult = false;
-            return new PlayerDTO(player.grid(), validationResult, guessStatus);
-        }
+        Cell currentCell = player.grid()[row][col];
 
-        return new PlayerDTO(player.grid(), validationResult, guessStatus);
+        // Check the cell status and update guessStatus and validationResult accordingly
+        switch(currentCell)
+        {
+            case Cell.WATER:
+                guessStatus = "Valid Guess";
+                validationResult = true;
+                return new PlayerDTO(player.grid(), validationResult, guessStatus);
+            case Cell.MISS:
+                guessStatus = "Invalid Guess: MISS Cell already guessed";
+                return new PlayerDTO(player.grid(), validationResult, guessStatus);
+            case Cell.HIT:
+                guessStatus = "Invalid Guess: HIT Cell already guessed";
+                return new PlayerDTO(player.grid(), validationResult, guessStatus);
+            default:
+                guessStatus = "Sorry the guess is invalid";
+                return new PlayerDTO(player.grid(), validationResult, guessStatus);
+        }
     }
 }
