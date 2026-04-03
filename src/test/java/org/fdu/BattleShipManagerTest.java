@@ -1,6 +1,5 @@
 package org.fdu;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -44,6 +43,20 @@ class BattleShipManagerTest {
         String flippedFormat = "5A";
         player = manager.validatePlayerGuess(flippedFormat, player);
         assertFalse(player.isValidGuess(), "Guess should be in the correct col,row format");
+    }
+
+    @Test
+    @DisplayName("Testing overloaded startGame Function")
+    void testOverloadedStartGame()
+    {
+        BattleShipManager manager = new BattleShipManager();
+        // HIT Coordinate is A1 or 0,0
+        // MISS Coordinate is J10 or 9,9 in this case
+        int xHitCoord = 0, yHitCoord = 0;
+        int xMissCoord = 0, yMissCoord = 9;
+        player = manager.startGame(player, xHitCoord, yHitCoord, xMissCoord, yMissCoord);
+        assertEquals(Cell.HIT, player.grid()[xHitCoord][yHitCoord]);
+        assertEquals(Cell.MISS,player.grid()[xMissCoord][yMissCoord]);
     }
 
 
