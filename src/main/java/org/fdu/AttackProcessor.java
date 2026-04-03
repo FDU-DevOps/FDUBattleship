@@ -65,7 +65,7 @@ public class AttackProcessor {
                 status = GameStatus.LOSS;
             } else {
                 status = GameStatus.IN_PROGRESS;
-            };
+            }
 
             PlayerDTO updatedHuman    = new PlayerDTO(newTrackingGrid, guessesLeft, status);
             PlayerDTO updatedComputer = new PlayerDTO(newShipGrid, 0, GameStatus.IN_PROGRESS);

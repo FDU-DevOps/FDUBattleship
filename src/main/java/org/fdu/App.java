@@ -10,6 +10,7 @@ import java.util.Scanner;
  * manager's exposed components.
  * </p>
  */
+
 public class App {
     public static void main(String[] args) {
         BattleshipManager manager = new BattleshipManager();

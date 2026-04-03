@@ -1,6 +1,5 @@
 package org.fdu;
 import java.util.Random;
-import java.util.Scanner;
 
 /**
  * Service class responsible for starting the full Battleship game loop.
@@ -77,30 +76,14 @@ public class BattleshipManager {
      * </p>
      */
 
-    public void startGame() {
-        Scanner scanner = new Scanner(System.in);
+    //Getters and Setters
 
-        while (humanDTO.gameStatus() == GameStatus.IN_PROGRESS) {
-            battleBoard.displayBoard(humanDTO.grid());
-            System.out.println("Guesses remaining: " + humanDTO.guessesLeft());
-            System.out.print("Enter coordinate (e.g. A1): ");
+    public PlayerDTO getHumanDTO() { return humanDTO; }
+    public void setHumanDTO(PlayerDTO humanDTO) { this.humanDTO = humanDTO; }
 
-            String input = scanner.nextLine().trim().toUpperCase();
-            // First character is the column letter, subtract 'A' to convert it to a 0-based index
-            int col = input.charAt(0) - 'A';
-            // Remaining characters are the row number, subtract 1 to convert from 1-based to 0-based
-            int row = Integer.parseInt(input.substring(1)) - 1;
+    public PlayerDTO getComputerDTO() { return computerDTO; }
+    public void setComputerDTO(PlayerDTO computerDTO) { this.computerDTO = computerDTO; }
 
-            PlayerDTO[] result = attackProcessor.processAttack(row, col, humanDTO, computerDTO);
-            // Unpack the returned array to replace both DTOs with their updated versions
-            humanDTO    = result[0];
-            computerDTO = result[1];
-
-            // Read the updated tracking grid to determine what to print, not the raw attack outcome
-            if (humanDTO.grid()[row][col] == Cell.HIT)        System.out.println("Hit!");
-            if (humanDTO.grid()[row][col] == Cell.MISS)       System.out.println("Miss!");
-            if (humanDTO.gameStatus() == GameStatus.WIN)      System.out.println("You sunk my battleship! You win!");
-            if (humanDTO.gameStatus() == GameStatus.LOSS)     System.out.println("No guesses remaining. You lose!");
-        }
-    }
+    public BattleBoard getBattleBoard() { return battleBoard; }
+    public AttackProcessor getAttackProcessor() { return attackProcessor; }
 }
