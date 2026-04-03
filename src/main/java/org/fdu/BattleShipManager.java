@@ -11,12 +11,30 @@ public class BattleShipManager
     boolean validatePlayerGuess(String playerGuess)
     {
         // normalize playerGuess - toUpperCase, truncate if guess is longer than index 3
+
         //Return false for all these checks
         // Check if guess is proper format (A5, not 5A)
+
         // Check if guess is out of bounds
+
         // Check if cell has already been marked
+
         //otherwise return true
+
         // Check if guess is out of bounds
-        return true;
+
+
+        if (playerGuess == null)
+        {
+            return false;
+        }
+
+        playerGuess = playerGuess.toUpperCase().trim();
+        String pattern = "^[A-J](10|[1-9])$";
+
+
+
+        return playerGuess.matches(pattern);
+
     }
 }
