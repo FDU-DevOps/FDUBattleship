@@ -13,4 +13,4 @@ package org.fdu;
  *             col 0-9 maps to A-J
  *             row 0-9 maps to 1-10
  */
-public record BattleBoardDTO(Cell[][] grid) {}
+public record PlayerDTO(Cell[][] grid) {}

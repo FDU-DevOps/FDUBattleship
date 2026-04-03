@@ -19,7 +19,7 @@ public class BattleBoard
      * The current state of the board, stored as a DTO.
      * Initialized in the constructor and updated as the game progresses.
      */
-    private final BattleBoardDTO boardState;
+    private final PlayerDTO boardState;
 
     /**
      * Constructs a new BattleBoard and initializes a blank 10x10 grid.
@@ -37,7 +37,7 @@ public class BattleBoard
      *
      * @return a BattleBoardDTO containing the blank initialized grid
      */
-    private BattleBoardDTO initBoard() {
+    private PlayerDTO initBoard() {
         Cell[][] grid = new Cell[SIZE][SIZE];
 
         for (int row = 0; row < SIZE; row++) {
@@ -46,7 +46,7 @@ public class BattleBoard
             }
         }
 
-        return new BattleBoardDTO(grid);
+        return new PlayerDTO(grid);
     }
     /**
      * Prints the current board state to the console.
@@ -97,7 +97,7 @@ public class BattleBoard
      * @return the current BattleBoardDTO representing the board state
      */
 
-    public BattleBoardDTO getState() {
+    public PlayerDTO getState() {
         return boardState;
     }
 }
