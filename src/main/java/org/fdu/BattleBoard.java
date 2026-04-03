@@ -13,7 +13,7 @@ package org.fdu;
 public class BattleBoard
 {
 
-    private final int SIZE = 10;
+    private static final int SIZE = 10;
     private static final char[] COLUMNS = {'A','B','C','D','E','F','G','H','I','J'};
     /**
      * The current state of the board, stored as a DTO.
@@ -37,7 +37,7 @@ public class BattleBoard
      *
      * @return a BattleBoardDTO containing the blank initialized grid
      */
-    private PlayerDTO initBoard() {
+    public static PlayerDTO initBoard() {
         Cell[][] grid = new Cell[SIZE][SIZE];
 
         for (int row = 0; row < SIZE; row++) {
