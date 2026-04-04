@@ -7,7 +7,7 @@ public class BoardController {
 
     @GetMapping("/reset")
     public PlayerDTO resetBoard() {
-        BattleBoard board = new BattleBoard();
-        return board.getState();
+        BattleshipManager board = new BattleshipManager();
+        return board.getHumanDTO();
     }
 }

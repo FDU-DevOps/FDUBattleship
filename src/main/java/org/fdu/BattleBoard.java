@@ -8,13 +8,7 @@ package org.fdu;
  * </p>
  */
 
-    private final int SIZE = 10;
-    private static final char[] COLUMNS = {'A','B','C','D','E','F','G','H','I','J'};
-    /**
-     * The current state of the board, stored as a DTO.
-     * Initialized in the constructor and updated as the game progresses.
-     */
-    private final PlayerDTO boardState;
+public class BattleBoard {
 
     /**
      * Prints a live tracking grid passed in from humanDTO.
@@ -28,8 +22,6 @@ package org.fdu;
      *
      * @param trackingGrid the current tracking grid from humanDTO to render
      */
-    private PlayerDTO initBoard() {
-        Cell[][] grid = new Cell[SIZE][SIZE];
 
     public void displayBoard(Cell[][] trackingGrid) {
         // Print column labels before the first row so they stay aligned with the grid
@@ -44,46 +36,6 @@ package org.fdu;
                 else if (cell == Cell.MISS) System.out.print("[O]");
                 else                        System.out.print("[~]");
             }
-        }
-
-        return new PlayerDTO(grid);
-    }
-    /**
-     * Prints the current board state to the console.
-    * <p>
-    * Renders the 10x10 grid with column labels A-J across the top
-    * and row numbers 1-10 along the left side. Each Cell: WATER
-     * cell is displayed as ~.
-    * </p>
-    * <p>
-    * Expected output format:
-    *     A B C D E F G H I J
-    *  1  ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
-    *  2  ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
-     *  ...
-    * 10  ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
-    * </p>
-    */
-
-    public void displayBoard() {
-
-        // Print column headers
-        System.out.print("   ");
-        for (char c : COLUMNS) {
-            System.out.print(" " + c + "  ");
-        }
-        System.out.println();
-
-
-        // Print rows
-        for (int row = 0; row < SIZE; row++) {
-
-            System.out.printf("%2d ", row + 1);
-
-            for (int col = 0; col < SIZE; col++) {
-                System.out.print("[~] ");
-            }
-
             System.out.println();
         }
     }
@@ -98,7 +50,12 @@ package org.fdu;
      * </p>
      */
 
-    public PlayerDTO getState() {
-        return boardState;
+    private void printHeader() {
+        // Two spaces match the "%2d" row number width in displayBoard, keeping columns aligned
+        System.out.print("  ");
+        for (char c = 'A'; c <= 'J'; c++) {
+            System.out.printf("[%c]", c);
+        }
+        System.out.println();
     }
 }
