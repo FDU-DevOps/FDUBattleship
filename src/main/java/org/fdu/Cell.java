@@ -1,4 +1,5 @@
 package org.fdu;
+
 /**
  * Represents the possible states of a single cell on the Battleship board.
  * <p>
@@ -6,7 +7,11 @@ package org.fdu;
  * For this story, only WATER is defined, representing a blank/empty cell.
  * </p>
  */
+
 public enum Cell
 {
-    WATER
+    WATER,
+    SHIP,
+    HIT,
+    MISS
 }

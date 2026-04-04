@@ -1,17 +1,12 @@
 package org.fdu;
 
 /**
- * Service class responsible for managing the Battleship board.
+ * Stateless renderer for the Battleship tracking grid.
  * <p>
- * Owns the board state via a BattleBoardDTO and handles
- * initialization of the grid and rendering it to the console.
- * Acts as the central point of interaction for the board, meaning
- * other classes such as BattleShipManager will talk to this
- * class rather than manipulating the grid directly.
+ * Holds no grid state of its own. BattleShipManager passes the current
+ * tracking grid from humanDTO each turn to display the player's guess history.
  * </p>
  */
-public class BattleBoard
-{
 
     private final int SIZE = 10;
     private static final char[] COLUMNS = {'A','B','C','D','E','F','G','H','I','J'};
@@ -22,27 +17,32 @@ public class BattleBoard
     private final PlayerDTO boardState;
 
     /**
-     * Constructs a new BattleBoard and initializes a blank 10x10 grid.
-     * Every cell is set to Cell: WATER on creation.
-     */
-    public BattleBoard() {
-        boardState = initBoard();
-    }
-    /**
-     * Creates a fresh 10x10 grid with every cell set to Cell: WATER.
+     * Prints a live tracking grid passed in from humanDTO.
      * <p>
-     * This method is called once during construction. The resulting grid is
-     * wrapped in a BattleBoardDTO and stored as the initial board state.
+     * Renders the 10x10 grid with column labels A-J across the top and row
+     * numbers 1-10 along the left side. Cell display symbols: HIT as [X],
+     * MISS as [O], WATER or SHIP as [~] (ship location hidden from player).
+     * Called by BattleShipManager each turn to show the player their current
+     * guess history.
      * </p>
      *
-     * @return a BattleBoardDTO containing the blank initialized grid
+     * @param trackingGrid the current tracking grid from humanDTO to render
      */
     private PlayerDTO initBoard() {
         Cell[][] grid = new Cell[SIZE][SIZE];
 
-        for (int row = 0; row < SIZE; row++) {
-            for (int col = 0; col < SIZE; col++) {
-                grid[row][col] = Cell.WATER;
+    public void displayBoard(Cell[][] trackingGrid) {
+        // Print column labels before the first row so they stay aligned with the grid
+        printHeader();
+        for (int row = 0; row < 10; row++) {
+            // Row numbers are 1-based for the player, while the array is 0-based internally
+            System.out.printf("%2d", row + 1);
+            for (int col = 0; col < 10; col++) {
+                Cell cell = trackingGrid[row][col];
+                // SHIP is intentionally rendered as [~] to keep ship positions hidden from the player
+                if (cell == Cell.HIT)       System.out.print("[X]");
+                else if (cell == Cell.MISS) System.out.print("[O]");
+                else                        System.out.print("[~]");
             }
         }
 
@@ -87,14 +87,15 @@ public class BattleBoard
             System.out.println();
         }
     }
+
     /**
-     * Returns the current state of the board as a BattleBoardDTO.
+     * Prints the column labels A-J across the top of the board.
      * <p>
-     * Used by other classes such as BattleShipManager to read
-     * board state without directly accessing BattleBoard internals.
+     * Outputs a leading two-space indent to align with the row number
+     * prefix used in displayBoard, then prints each column letter
+     * wrapped in brackets. Called once at the start of each displayBoard
+     * invocation.
      * </p>
-     *
-     * @return the current BattleBoardDTO representing the board state
      */
 
     public PlayerDTO getState() {
