@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang ="en">
+<head>
+    <title>Battleship Board</title>
+</head>
+<body>
+<h1>BATTLESHIP</h1>
+<!--    <button onclick="loadBoard()">Load Board</button>-->
+<table id="board" ></table>
+
+<script>
+    window.onload=loadBoard;
+
+    async function loadBoard() {
+        const res = await fetch('/reset');
+        const data = await res.json();
+        const table = document.getElementById('board');
+        table.innerHTML = ' ';
+        for (let i = 0; i < data.grid.length; i++) {
+            const row = table.insertRow();
+            for (let j = 0; j < data.grid[i].length; j++) {
+                const cell = row.insertCell();
+                cell.textContent = '[~]';
+            }
+        }
+    }
+</script>
+</body>
+</html>
