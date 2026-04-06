@@ -35,7 +35,7 @@ pipeline {
         stage('Run JAR') {
             steps {   
                 sh 'pkill -f "/opt/battleship/test/*.jar" || true'
-                sh 'JENKINS_NODE_COOKIE=dontKillMe nohup java -jar /opt/battleship/test/*.jar --server.port=8081 > /opt/battleship/test/app.log 2>&1 &'
+                sh 'JENKINS_NODE_COOKIE=dontKillMe nohup java -jar /opt/battleship/test/*.jar > /opt/battleship/test/app.log 2>&1 &'
             } //https://stackoverflow.com/questions/37341545/unable-to-run-nohup-command-from-jenkins-as-a-background-process test
         }
     }
