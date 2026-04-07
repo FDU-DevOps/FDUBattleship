@@ -3,8 +3,20 @@
 <head>
     <title>Battleship Board</title>
 </head>
+ 
 <body>
 <h1>BATTLESHIP</h1>
+       <p id="version"></p>
+    <script>
+        async function loadVersion() {
+            const response = await fetch("/version");
+            const version = await response.text(); //https://stackoverflow.com/questions/41946457/getting-text-from-fetch-response-object
+            document.getElementById("version").innerText = "Version: " + version;
+        }
+        loadVersion();
+    </script>
+
+    
 <!--    <button onclick="loadBoard()">Load Board</button>-->
 <table id="board" ></table>
 
