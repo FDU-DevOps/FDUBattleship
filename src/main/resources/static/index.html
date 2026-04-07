@@ -2,28 +2,92 @@
 <html lang ="en">
 <head>
     <title>Battleship Board</title>
+    <style>
+    body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+    }
+    h1 {
+        margin-bottom: 20px;
+    }
+    table {
+        border-collapse: collapse;
+        margin: 0 auto;
+    }
+    td, th {
+        width: 40px;
+        height: 40px;
+        text-align: center;
+        border: 1px solid black;
+        font-weight: bold;
+    }
+    /* Labels */
+    .label {
+        background-color: #ddd;
+    }
+    /* Cell States */
+    .water {
+        background-color: #79afd2;
+         color: white;
+    }
+    .hit {
+        background-color: #e74c3c;
+        color: white;
+    }
+    .miss {
+        background-color: #ecf0f1;
+         color: black; }
+    </style>
 </head>
 <body>
 <h1>BATTLESHIP</h1>
-<!--    <button onclick="loadBoard()">Load Board</button>-->
-<table id="board" ></table>
-
+<table id="board"></table>
 <script>
-    window.onload=loadBoard;
-
-    async function loadBoard() {
-        const res = await fetch('/reset');
-        const data = await res.json();
+    const size = 10;
+    const letters = "ABCDEFGHIJ";
+    function loadBoard() {
         const table = document.getElementById('board');
-        table.innerHTML = ' ';
-        for (let i = 0; i < data.grid.length; i++) {
+        table.innerHTML = '';
+        // Top header row (A–J)
+        const headerRow = table.insertRow();
+        headerRow.insertCell(); // empty corner
+        for (let j = 0; j < size; j++) {
+            const th = document.createElement("th");
+            th.textContent = letters[j];
+            th.className = "label";
+            headerRow.appendChild(th);
+        }
+        // Predefined cells for demonstration
+        const hitCells = [{row: 2, col: 3}]; // example HIT at (3, D)
+        const missCells = [{row: 5, col: 6}]; // example MISS at (6, G)
+        for (let i = 0; i < size; i++) {
             const row = table.insertRow();
-            for (let j = 0; j < data.grid[i].length; j++) {
+            const labelCell = document.createElement("th");
+            labelCell.textContent = i + 1;
+            labelCell.className = "label";
+            row.appendChild(labelCell);
+            for (let j = 0; j < size; j++) {
                 const cell = row.insertCell();
-                cell.textContent = '[~]';
+                // Default WATER
+                let state = "water";
+                let symbol = "~";
+                //HIT
+                if (hitCells.some(c => c.row === i && c.col === j)) {
+                    state = "hit";
+                    symbol = "X";
+                }
+                //  MISS
+                if (missCells.some(c => c.row === i && c.col === j)) {
+                    state = "miss";
+                    symbol = "O";
+                }
+                cell.className = state;
+                cell.textContent = symbol;
             }
         }
     }
+    // Load board on page
+    window.onload = loadBoard;
 </script>
 </body>
 </html>
