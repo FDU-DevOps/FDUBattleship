@@ -17,4 +17,4 @@ class VersionController {
     public String getVersion() {
         return version;
     }
-}
+} //
