@@ -46,9 +46,8 @@ public class BattleshipManager {
         for (Cell[] row : shipGrid) java.util.Arrays.fill(row, Cell.WATER);
 
         // Pick a random cell inside the 10x10 bounds for the ship placement
-        //Place a single 3-cell ship horizontally at a random valid position
         Random rand = new Random();
-        int[] shipLengths = {3, 4};
+        int[] shipLengths = {5, 4, 3, 2};
 
         for (int shipLen : shipLengths) {
             boolean placed = false;
