@@ -46,17 +46,11 @@
 
   <build>
     <plugins>
-      <plugin>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>3.4.1</version>
-        <configuration>
-          <archive>
-            <manifest>
-              <mainClass>org.fdu.App</mainClass>
-            </manifest>
-          </archive>
-        </configuration>
-      </plugin>
+        <!-- Spring boot plugin -->
+        <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+        </plugin>
 
       <!-- Ensure JUnit 5 runs correctly -->
       <plugin>
