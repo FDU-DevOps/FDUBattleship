@@ -3,44 +3,53 @@
 <head>
     <title>Battleship Board</title>
     <style>
-    body {
-        font-family: Arial, sans-serif;
-        text-align: center;
-    }
-    h1 {
-        margin-bottom: 20px;
-    }
-    table {
-        border-collapse: collapse;
-        margin: 0 auto;
-    }
-    td, th {
-        width: 40px;
-        height: 40px;
-        text-align: center;
-        border: 1px solid black;
-        font-weight: bold;
-    }
-    /* Labels */
-    .label {
-        background-color: #ddd;
-    }
-    /* Cell States */
-    .water {
-        background-color: #79afd2;
-         color: white;
-    }
-    .hit {
-        background-color: #e74c3c;
-        color: white;
-    }
-    .miss {
-        background-color: #ecf0f1;
-         color: black; }
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        table {
+            border-collapse: collapse;
+            margin: 0 auto;
+        }
+        td, th {
+            width: 40px;
+            height: 40px;
+            text-align: center;
+            border: 1px solid black;
+            font-weight: bold;
+        }
+        /* Labels */
+        .label {
+            background-color: #ddd;
+        }
+        /* Cell States */
+        .water {
+            background-color: #79afd2;
+            color: white;
+        }
+        .hit {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .miss {
+            background-color: #ecf0f1;
+            color: black; }
     </style>
 </head>
 <body>
 <h1>BATTLESHIP</h1>
+<p id="version"></p>
+<script>
+    async function loadVersion() {
+        const response = await fetch("/version");
+        const version = await response.text(); //https://stackoverflow.com/questions/41946457/getting-text-from-fetch-response-object
+        document.getElementById("version").innerText = "Version: " + version;
+    }
+    loadVersion();
+</script>
 <table id="board"></table>
 <h3>Response:</h3>
 <p id="message"></p>
