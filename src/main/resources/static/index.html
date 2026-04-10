@@ -41,6 +41,8 @@
 </head>
 <body>
 <h1>BATTLESHIP</h1>
+<p id="guesses-left">Guesses left: </p>
+<p id="ship-location"> </p>
 <table id="board"></table>
 <h3>Response:</h3>
 <p id="message"></p>
@@ -115,13 +117,20 @@
             const newState = data.grid[row][col];
             updateBoard(row, col, newState);
 
-            if (data.gameStatus !== "IN_PROGRESS") {
-                gameOver = true;
+            document.getElementById("guesses-left").innerText = `Guesses left: ${data.guessesLeft}`;
 
-                if (data.gameStatus === "WIN") {
-                    document.getElementById("message").innerText="You sunk the ship!";
+            if (data.gameStatus === "IN_PROGRESS") {
+                if (newState === "hit") {
+                    document.getElementById("message").innerText = "Hit!";
                 } else {
-                    document.getElementById("message").innerText="You Lose!";
+                    document.getElementById("message").innerText = "Miss!";
+                }
+            } else {
+                gameOver = true;
+                if (data.gameStatus === "WIN") {
+                    document.getElementById("message").innerText = "You Won!";
+                } else {
+                    document.getElementById("message").innerText = "You Lose!";
                 }
             }
         }
@@ -129,7 +138,9 @@
 
     // Load board on page
     window.onload = async function () {
-        await fetch("/api/battleship/start-game", { method: "POST" });
+        const response = await fetch("/api/battleship/start-game", { method: "POST" });
+        const guessesLeft = await response.json();
+        document.getElementById("guesses-left").innerText = `Guesses left: ${guessesLeft}`;
         loadBoard();
     };
 </script>
