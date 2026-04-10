@@ -14,9 +14,9 @@ class BoardControllerTest {
         BoardController controller = new BoardController();
         MockHttpSession session = new MockHttpSession();
 
-        String response = controller.startGame(session);
+        int response = controller.startGame(session);
 
-        assertEquals("Game started!", response);
+        assertEquals(10, response);
         assertNotNull(session.getAttribute("game"));
     }
 

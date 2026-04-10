@@ -8,10 +8,10 @@ import org.springframework.web.bind.annotation.*;
 public class BoardController {
 
     @PostMapping("/start-game")
-    public String startGame(HttpSession session) {
+    public int startGame(HttpSession session) {
         BattleshipManager manager = new BattleshipManager();
         session.setAttribute("game", manager);
-        return "Game started!";
+        return manager.getHumanDTO().guessesLeft();
     }
 
     @PostMapping("/attack")
