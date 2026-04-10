@@ -46,10 +46,22 @@ public class AttackProcessor {
             newShipGrid[row][col]     = Cell.HIT;
             newTrackingGrid[row][col] = Cell.HIT;
 
-            // guessesLeft is preserved unchanged, a win ends the game before it matters
-            PlayerDTO updatedHuman    = new PlayerDTO(newTrackingGrid, humanDTO.guessesLeft(), GameStatus.WIN);
-            // Computer carries no meaningful status, IN_PROGRESS is used as a neutral placeholder
-            PlayerDTO updatedComputer = new PlayerDTO(newShipGrid, 0, GameStatus.IN_PROGRESS);
+            boolean shipsRemaining = false;
+            for (Cell[] shipRow : newShipGrid) {
+                for (Cell c : shipRow) {
+                    if (c == Cell.SHIP)
+                    {
+                        shipsRemaining = true;
+                        break;
+                    }
+                }
+                if (shipsRemaining) {break;}
+            }
+            GameStatus status = shipsRemaining ? GameStatus.IN_PROGRESS : GameStatus.WIN;
+            System.out.println("shipsRemaining: " + shipsRemaining);
+            System.out.println("status: " + status);
+           PlayerDTO updatedHuman = new PlayerDTO(newTrackingGrid, humanDTO.guessesLeft(), status);
+           PlayerDTO updatedComputer = new PlayerDTO(newShipGrid, 0, GameStatus.IN_PROGRESS);
             return new PlayerDTO[]{ updatedHuman, updatedComputer };
 
         } else {

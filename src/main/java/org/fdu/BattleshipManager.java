@@ -38,8 +38,6 @@ public class BattleshipManager {
      */
 
     public BattleshipManager() {
-        final int shipRow;
-        final int shipCol;
         battleBoard     = new BattleBoard();
         attackProcessor = new AttackProcessor();
 
@@ -48,10 +46,17 @@ public class BattleshipManager {
         for (Cell[] row : shipGrid) java.util.Arrays.fill(row, Cell.WATER);
 
         // Pick a random cell inside the 10x10 bounds for the ship placement
+        //Place a single 3-cell ship horizontally at a random valid position
         Random rand = new Random();
-        shipRow = rand.nextInt(SIZE);
-        shipCol = rand.nextInt(SIZE);
-        shipGrid[shipRow][shipCol] = Cell.SHIP;
+        int shipLength = 3;
+        int shipRow = rand.nextInt(SIZE);
+       int shipCol = rand.nextInt(SIZE - shipLength + 1);
+
+        for (int i = 0; i < shipLength; i++) {
+            shipGrid[shipRow][shipCol + i] = Cell.SHIP;
+            System.out.println("Placing ship cell at: " + (char)('A' + shipCol + i) + (shipRow + 1));
+        }
+
         computerDTO = new PlayerDTO(shipGrid, 0, GameStatus.IN_PROGRESS);
 
         // Human starts with a fully blank tracking grid and the maximum allowed guesses
@@ -60,7 +65,22 @@ public class BattleshipManager {
         humanDTO = new PlayerDTO(trackingGrid, MAX_GUESSES, GameStatus.IN_PROGRESS);
 
         // Debug line, remove before shipping to players
-        System.out.println("Ship is at: " + (char)('A' + shipCol) + (shipRow + 1));
+        System.out.println("Ship starts at: " + (char)('A' + shipCol) + (shipRow + 1));
+
+
+        // build shipGrid = new Cell[SIZE][SIZE], fill all with Cell.WATER
+        // Refactor:
+        // SPIKE ALGO to take in dto as parameter rather than grid:
+        // SPIKE ALGO to place ship how browser places ships
+
+        // loop until all ships are placed:
+        //   pick random row and col
+        //   if cell is Cell.WATER, place Cell.SHIP
+        //   otherwise skip and try again
+        // computerDTO = new PlayerDTO(shipGrid, 0, GameStatus.IN_PROGRESS, ...)
+
+        // build trackingGrid = new Cell[SIZE][SIZE], fill all with Cell.WATER
+        // humanDTO = new PlayerDTO(trackingGrid, MAX_GUESSES, GameStatus.IN_PROGRESS, ...)
     }
 
 
