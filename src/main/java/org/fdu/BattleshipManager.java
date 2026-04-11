@@ -59,7 +59,12 @@ public class BattleshipManager {
     }
 
 
-    //Takes the grid and ship lengths, randomly decides 3 values (row,col,orientation), and checks for boundaries
+    /**
+     * Helper Function to help place ships on the grid of the DTO<br>
+     * Scope: Decides random orientation and random row,col before completing checks and checking boundaries
+     * @param grid - grid in which the ships will be placed
+     * @param shipLength - length of the ship that will be placed
+     */
     private void placeShip(Cell[][] grid, int shipLength) {
         boolean shipPlaced = false;
         while (!shipPlaced) {
