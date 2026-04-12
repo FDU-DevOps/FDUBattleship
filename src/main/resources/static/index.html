@@ -41,12 +41,17 @@
 </head>
 <body>
 <h1>BATTLESHIP</h1>
+<button id="userFeedbackButton" onclick="handleFeedbackClick()">Submit Game Feedback</button>
 <p id="guesses-left">Guesses left: </p>
 <p id="ship-location"> </p>
 <table id="board"></table>
 <h3>Response:</h3>
 <p id="message"></p>
 <script>
+    const USER_FEEDBACK_LINK = 'https://docs.google.com/forms/d/e/1FAIpQLSdr2xzx1jbwUW6hDL321aXq4rXhb8n56_qPCpv8hvU4RCcTCA/viewform';
+    function handleFeedbackClick() {
+        window.open(USER_FEEDBACK_LINK, '_blank');
+    }
     const size = 10;
     const letters = "ABCDEFGHIJ";
     let gameOver= false;
