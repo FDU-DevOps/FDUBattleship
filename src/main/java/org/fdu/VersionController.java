@@ -9,11 +9,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 //https://www.logicbig.com/tutorials/spring-framework/spring-boot/maven-resource-filtering.html
 
 @RestController
-@RequestMapping("/")
 class VersionController {
     @Value("${project-version}")
     private String version;
-    @GetMapping("/version")
+
+    @GetMapping("/api/version")
     public String getVersion() {
         return version;
     }

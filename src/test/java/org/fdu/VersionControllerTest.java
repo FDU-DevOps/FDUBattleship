@@ -22,7 +22,7 @@ public class VersionControllerTest {
     @Test
     @DisplayName("Testing index version loads properly.")
     void testIndexPageLoads(@Autowired RestTestClient restClient) {
-        RestTestClient.ResponseSpec spec = restClient.get().uri("/version").exchange();
+        RestTestClient.ResponseSpec spec = restClient.get().uri("/api/version").exchange();
         RestTestClientResponse response = RestTestClientResponse.from(spec);
         assertThat(response).hasStatusOk();
     }

@@ -21,6 +21,7 @@ class BattleshipManagerTest {
         out = new ByteArrayOutputStream();
         System.setOut(new PrintStream(out));
         manager = new BattleshipManager();
+        manager.initializeGame();
     }
 
     @AfterEach
@@ -84,14 +85,14 @@ class BattleshipManagerTest {
     }
 
     @Test
-    @DisplayName("Init: computer ship grid contains exactly one SHIP cell")
-    void computerGridContainsExactlyOneShip() {
+    @DisplayName("Init: computer ship grid contains all ships - total 17 SHIP cells")
+    void computerGridContainsAllShips() {
         Cell[][] grid = manager.getComputerDTO().grid();
-        long shipCount = 0;
+        int shipCount = 0;
         for (Cell[] row : grid)
             for (Cell cell : row)
                 if (cell == Cell.SHIP) shipCount++;
-        assertEquals(1, shipCount);
+        assertEquals(17, shipCount); // There are 17 total cells that are SHIP for a full Battleship game
     }
 
     @Test
@@ -136,7 +137,9 @@ class BattleshipManagerTest {
     }
 
     // Debug output
-
+    // This test case is used for the console version
+    //TODO: Depreciate this code, or update for Browser version, commented out for now
+    /*
     @Test
     @DisplayName("Debug: constructor prints the ship coordinate to stdout")
     void constructorPrintsShipLocation() {
@@ -144,5 +147,5 @@ class BattleshipManagerTest {
         String output = out.toString();
         assertTrue(output.contains("Ship is at: "),
                 "Expected debug ship location line was not printed");
-    }
+    } */
 }

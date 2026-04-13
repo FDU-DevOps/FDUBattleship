@@ -54,6 +54,10 @@
 <h3>Response:</h3>
 <p id="message"></p>
 <script>
+    const USER_FEEDBACK_LINK = 'https://docs.google.com/forms/d/e/1FAIpQLSdr2xzx1jbwUW6hDL321aXq4rXhb8n56_qPCpv8hvU4RCcTCA/viewform';
+    function handleFeedbackClick() {
+        window.open(USER_FEEDBACK_LINK, '_blank');
+    }
     const size = 10;
     const letters = "ABCDEFGHIJ";
     let gameOver= false;
@@ -108,7 +112,7 @@
 
             if (gameOver) return;
 
-            const response = await fetch("/api/battleship/attack", {
+            const response = await fetch("api/battleship/attack", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ row: row, column: col })
@@ -124,13 +128,20 @@
             const newState = data.grid[row][col];
             updateBoard(row, col, newState);
 
-            if (data.gameStatus !== "IN_PROGRESS") {
-                gameOver = true;
+            document.getElementById("guesses-left").innerText = `Guesses left: ${data.guessesLeft}`;
 
-                if (data.gameStatus === "WIN") {
-                    document.getElementById("message").innerText="You sunk the ship!";
+            if (data.gameStatus === "IN_PROGRESS") {
+                if (newState === "hit") {
+                    document.getElementById("message").innerText = "Hit!";
                 } else {
-                    document.getElementById("message").innerText="You Lose!";
+                    document.getElementById("message").innerText = "Miss!";
+                }
+            } else {
+                gameOver = true;
+                if (data.gameStatus === "WIN") {
+                    document.getElementById("message").innerText = "You Won!";
+                } else {
+                    document.getElementById("message").innerText = "You Lose!";
                 }
             }
         }
@@ -138,7 +149,9 @@
 
     // Load board on page
     window.onload = async function () {
-        await fetch("/api/battleship/start-game", { method: "POST" });
+        const response = await fetch("api/battleship/start-game", { method: "POST" });
+        const guessesLeft = await response.json();
+        document.getElementById("guesses-left").innerText = `Guesses left: ${guessesLeft}`;
         loadBoard();
     };
 </script>

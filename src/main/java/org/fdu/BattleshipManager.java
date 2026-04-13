@@ -1,5 +1,5 @@
 package org.fdu;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Service class responsible for starting the full Battleship game loop.
@@ -23,8 +23,8 @@ public class BattleshipManager {
     private PlayerDTO humanDTO;
     private PlayerDTO computerDTO;
     // Stateless, shared across all turns, no need to recreate each iteration
-    private final BattleBoard battleBoard;
-    private final AttackProcessor attackProcessor;
+    private BattleBoard battleBoard;
+    private AttackProcessor attackProcessor;
 
 
     /**
@@ -37,9 +37,8 @@ public class BattleshipManager {
      * </p>
      */
 
-    public BattleshipManager() {
-        final int shipRow;
-        final int shipCol;
+    public BattleshipManager() { }
+    public void initializeGame() {
         battleBoard     = new BattleBoard();
         attackProcessor = new AttackProcessor();
 
@@ -47,22 +46,60 @@ public class BattleshipManager {
         Cell[][] shipGrid = new Cell[SIZE][SIZE];
         for (Cell[] row : shipGrid) java.util.Arrays.fill(row, Cell.WATER);
 
-        // Pick a random cell inside the 10x10 bounds for the ship placement
-        Random rand = new Random();
-        shipRow = rand.nextInt(SIZE);
-        shipCol = rand.nextInt(SIZE);
-        shipGrid[shipRow][shipCol] = Cell.SHIP;
-        computerDTO = new PlayerDTO(shipGrid, 0, GameStatus.IN_PROGRESS);
+        // Initializes and places ships inside of grid
+        int[] shipLengths = {5, 4, 3, 3, 2};
+        for (int shipLen : shipLengths) {
+            placeShip(shipGrid, shipLen);
+        }
 
+        computerDTO = new PlayerDTO(shipGrid, 0, GameStatus.IN_PROGRESS);
         // Human starts with a fully blank tracking grid and the maximum allowed guesses
         Cell[][] trackingGrid = new Cell[SIZE][SIZE];
         for (Cell[] row : trackingGrid) java.util.Arrays.fill(row, Cell.WATER);
         humanDTO = new PlayerDTO(trackingGrid, MAX_GUESSES, GameStatus.IN_PROGRESS);
-
-        // Debug line, remove before shipping to players
-        System.out.println("Ship is at: " + (char)('A' + shipCol) + (shipRow + 1));
     }
 
+
+    /**
+     * Helper Function to help place ships on the grid of the DTO<br>
+     * Scope: Decides random orientation and random row,col before completing checks and checking boundaries
+     * @param grid - grid in which the ships will be placed
+     * @param shipLength - length of the ship that will be placed
+     *
+     * ToDo: throw an exception if the ship can't be placed
+     */
+    private void placeShip(Cell[][] grid, int shipLength) {
+        boolean shipPlaced = false;
+        while (!shipPlaced) {
+            boolean shipOrientation = ThreadLocalRandom.current().nextBoolean();
+            int row = ThreadLocalRandom.current().nextInt(SIZE);
+            int col = ThreadLocalRandom.current().nextInt(SIZE);
+
+            boolean shipFitsBounds = shipOrientation ? (col + shipLength <= SIZE) : (row + shipLength <= SIZE);
+
+            if (shipFitsBounds) {
+                boolean shipCanBePlaced = true;
+                for (int i = 0; i < shipLength; i++) {
+                    int r = shipOrientation ? row : row + i;
+                    int c = shipOrientation ? col + i : col;
+                    if (grid[r][c] != Cell.WATER) {
+                        shipCanBePlaced = false;
+                        break;
+                    }
+                }
+                if (shipCanBePlaced) {
+                    for (int i = 0; i < shipLength; i++) {
+                        int r = shipOrientation ? row : row + i;
+                        int c = shipOrientation ? col + i : col;
+                        grid[r][c] = Cell.SHIP;
+                        System.out.println("Placing ship cell at: " + (char)('A' + c) + (r + 1)); //Comment to see ship location in console
+                    }
+                    System.out.println("--- Ship of length " + shipLength + " placed ---"); //Comment to see ship length in console
+                    shipPlaced = true;
+                }
+            }
+        }
+    }
 
     /**
      * Starts and runs the main game loop until the player wins or loses.
@@ -86,4 +123,32 @@ public class BattleshipManager {
 
     public BattleBoard getBattleBoard() { return battleBoard; }
     public AttackProcessor getAttackProcessor() { return attackProcessor; }
+
+    // for testing purposes - protected, only accessible in org.fdu package
+    public static int getBoardSize() { return SIZE; }
+    public static int getMaxGuesses() { return MAX_GUESSES; }
+
+    void clearGrid(PlayerDTO dto) {
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                // Fill every cell with WATER
+                for (Cell[] row : dto.grid()) java.util.Arrays.fill(row, Cell.WATER);
+            }
+        }
+        System.out.println("--- board cleared of all ships ---");
+    }
+
+    void placeShip(PlayerDTO dto, int shipLength, boolean isHorizontal, int startCol, int startRow) {
+        int col = startCol;
+        int row = startRow;
+        // duplicates code for placeShip, can be simplified
+        for (int i = 0; i < shipLength; i++) {
+            int r = isHorizontal ? row : row + i;
+            int c = isHorizontal ? col + i : col;
+            dto.grid()[r][c] = Cell.SHIP;
+            System.out.println("Placing ship cell at: " + (char)('A' + c) + (r + 1));
+        }
+        System.out.println("--- Ship of length " + shipLength + " placed ---");
+    }
+
 }

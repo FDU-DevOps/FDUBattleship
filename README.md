@@ -12,10 +12,19 @@ Example Path: "C:\Users\<username>\Downloads\battleship-jar
 
 Then, run the command java -jar FDUBattleship-1.0-SNAPSHOT.jar
 
-Finally, open a browser and go to either localhost:8080 or 127.0.0.1:8080
+Finally, open a browser and go to either localhost:8090 or 127.0.0.1:8090
 
 # Update Log
 * Version 1.0-DEVOPS-516
      * Added README File
+* Version 1.0-DEVOPS-496
+  * Migrated to new path structure on servers
+    * e.g. test.fdugames.org/battleship
+    * test.fdugames.org/wordle
+    * test.fdugames.org/jenkins
+  * Will also support without application change production server as well
+  * Note: once merged, local access will also required explicit path
+    * e.g. http://localhost:8081/battleship
 
 # Current Known Bugs
+* DEVOPS-509 - Manual build fails to start new build (old build continues to run on server)
