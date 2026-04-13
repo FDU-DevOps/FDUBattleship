@@ -7,9 +7,11 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/battleship")
 public class BoardController {
 
+    // each start game generates a new object (v. generating a single object
     @PostMapping("/start-game")
     public int startGame(HttpSession session) {
         BattleshipManager manager = new BattleshipManager();
+        manager.initializeGame();
         session.setAttribute("game", manager);
         return manager.getHumanDTO().guessesLeft();
     }
@@ -22,6 +24,8 @@ public class BoardController {
                 (BattleshipManager) session.getAttribute("game");
 
 
+        // if attack received, but no game stored, don't process
+        // Note: DTO is not saved, so additional attacks will land here as well
         if (manager == null) {
             return new AttackResponseDTO(
                     null, 0, "NO_GAME",
@@ -38,6 +42,9 @@ public class BoardController {
 
         Cell[][] grid = human.grid();
 
+        // invalid attack, return current values other than message and isError boolean
+        //   why grid = null?
+        //    ToDo: define and use a wither
         if (row < 0 || row >= 10 || col < 0 || col >= 10) {
             return new AttackResponseDTO(
                     null,
@@ -48,7 +55,7 @@ public class BoardController {
             );
         }
 
-
+        // convertGrid converts the enums to Strings for consumption by client
         if (grid[row][col] == Cell.HIT || grid[row][col] == Cell.MISS) {
             return new AttackResponseDTO(
                     convertGrid(grid),
@@ -59,7 +66,7 @@ public class BoardController {
             );
         }
 
-
+        // valid attack ...
         PlayerDTO[] result =
                 manager.getAttackProcessor()
                         .processAttack(row, col, human, computer);
@@ -67,6 +74,8 @@ public class BoardController {
         PlayerDTO updatedHuman = result[0];
         PlayerDTO updatedComputer = result[1];
 
+        // never updates session - session contains a BattleshipManager object
+        //   updates the DTOs inside the object
         manager.setHumanDTO(updatedHuman);
         manager.setComputerDTO(updatedComputer);
 
@@ -92,5 +101,29 @@ public class BoardController {
             }
         }
         return result;
+    }
+
+    // for testing
+    @PostMapping("/debug/set-manager")
+    public void setManager(@RequestBody BattleshipManager newManager, HttpSession session) {
+        // This physically replaces the "Truth" on the server with your "Snapshot"
+        session.setAttribute("game", newManager);
+    }
+
+    @GetMapping("/humanStatus")
+    public PlayerDTO getHumanStatus(HttpSession session) {
+        BattleshipManager manager = (BattleshipManager) session.getAttribute("game");
+        return manager.getHumanDTO();
+    }
+    @GetMapping("/computerStatus")
+    public PlayerDTO getComputerStatus(HttpSession session) {
+        BattleshipManager manager = (BattleshipManager) session.getAttribute("game");
+        return manager.getComputerDTO();
+    }
+
+    @GetMapping("/battleshipManager")
+    public BattleshipManager getBattleshipManager(HttpSession session) {
+        BattleshipManager manager = (BattleshipManager) session.getAttribute("game");
+        return manager;
     }
 }

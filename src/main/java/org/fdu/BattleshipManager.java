@@ -23,8 +23,8 @@ public class BattleshipManager {
     private PlayerDTO humanDTO;
     private PlayerDTO computerDTO;
     // Stateless, shared across all turns, no need to recreate each iteration
-    private final BattleBoard battleBoard;
-    private final AttackProcessor attackProcessor;
+    private BattleBoard battleBoard;
+    private AttackProcessor attackProcessor;
 
 
     /**
@@ -37,7 +37,8 @@ public class BattleshipManager {
      * </p>
      */
 
-    public BattleshipManager() {
+    public BattleshipManager() { }
+    public void initializeGame() {
         battleBoard     = new BattleBoard();
         attackProcessor = new AttackProcessor();
 
@@ -64,6 +65,8 @@ public class BattleshipManager {
      * Scope: Decides random orientation and random row,col before completing checks and checking boundaries
      * @param grid - grid in which the ships will be placed
      * @param shipLength - length of the ship that will be placed
+     *
+     * ToDo: throw an exception if the ship can't be placed
      */
     private void placeShip(Cell[][] grid, int shipLength) {
         boolean shipPlaced = false;
@@ -120,4 +123,32 @@ public class BattleshipManager {
 
     public BattleBoard getBattleBoard() { return battleBoard; }
     public AttackProcessor getAttackProcessor() { return attackProcessor; }
+
+    // for testing purposes - protected, only accessible in org.fdu package
+    public static int getBoardSize() { return SIZE; }
+    public static int getMaxGuesses() { return MAX_GUESSES; }
+
+    void clearGrid(PlayerDTO dto) {
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                // Fill every cell with WATER
+                for (Cell[] row : dto.grid()) java.util.Arrays.fill(row, Cell.WATER);
+            }
+        }
+        System.out.println("--- board cleared of all ships ---");
+    }
+
+    void placeShip(PlayerDTO dto, int shipLength, boolean isHorizontal, int startCol, int startRow) {
+        int col = startCol;
+        int row = startRow;
+        // duplicates code for placeShip, can be simplified
+        for (int i = 0; i < shipLength; i++) {
+            int r = isHorizontal ? row : row + i;
+            int c = isHorizontal ? col + i : col;
+            dto.grid()[r][c] = Cell.SHIP;
+            System.out.println("Placing ship cell at: " + (char)('A' + c) + (r + 1));
+        }
+        System.out.println("--- Ship of length " + shipLength + " placed ---");
+    }
+
 }

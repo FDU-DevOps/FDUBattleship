@@ -36,12 +36,18 @@
           <artifactId>spring-boot-starter-webmvc-test</artifactId>
           <scope>test</scope>
       </dependency>
+      <!-- Spring Boot libraries supporting restClient functions such  as saving a REST test session -->
       <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter</artifactId>
-      <version>5.11.0</version>
-      <scope>test</scope>
-    </dependency>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-resttestclient</artifactId>
+          <scope>test</scope>
+      </dependency>
+      <dependency>
+          <groupId>org.junit.jupiter</groupId>
+          <artifactId>junit-jupiter</artifactId>
+          <version>5.11.0</version>
+          <scope>test</scope>
+      </dependency>
   </dependencies>
 
   <build>

@@ -9,6 +9,9 @@ package org.fdu;
  * of both as a PlayerDTO array. BattleShipManager delegates all guess
  * processing here rather than performing grid checks directly.
  * </p>
+ * Design assumes a single grid for each player (computer is another player)
+ * Renderer will display water when displaying a ship that has not been hit
+ * Note: could create another renderer that displays the ships (for the player)
  */
 
 public class AttackProcessor {
@@ -46,6 +49,9 @@ public class AttackProcessor {
             newShipGrid[row][col]     = Cell.HIT;
             newTrackingGrid[row][col] = Cell.HIT;
 
+            // cells are initially marked as ships, and then replaced by hits
+            // if there are cells that are still ships, then game is not over
+            // problem with this approach - hard to proclaim a ship is sunk
             boolean shipsRemaining = false;
             for (Cell[] shipRow : newShipGrid) {
                 for (Cell c : shipRow) {
@@ -83,6 +89,9 @@ public class AttackProcessor {
             PlayerDTO updatedComputer = new PlayerDTO(newShipGrid, 0, GameStatus.IN_PROGRESS);
             return new PlayerDTO[]{ updatedHuman, updatedComputer };
         }
+
+        // ToDo: improved robustness - check for water explicitly, if not a ship or water, than prior checking failed
+        //   thrown an exception
     }
 
     /**
