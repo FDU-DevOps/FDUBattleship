@@ -21,6 +21,7 @@ class BattleshipManagerTest {
         out = new ByteArrayOutputStream();
         System.setOut(new PrintStream(out));
         manager = new BattleshipManager();
+        manager.initializeGame();
     }
 
     @AfterEach
