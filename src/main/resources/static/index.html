@@ -44,7 +44,7 @@
 <p id="version"></p>
 <script>
     async function loadVersion() {
-        const response = await fetch("/api/version");
+        const response = await fetch("api/version");
         const version = await response.text(); //https://stackoverflow.com/questions/41946457/getting-text-from-fetch-response-object
         document.getElementById("version").innerText = "Version: " + version;
     }
