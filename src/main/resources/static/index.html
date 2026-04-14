@@ -53,6 +53,7 @@
 <table id="board"></table>
 <h3>Response:</h3>
 <p id="message"></p>
+<h3 id="guesses-left"></h3>
 <script>
     const USER_FEEDBACK_LINK = 'https://docs.google.com/forms/d/e/1FAIpQLSdr2xzx1jbwUW6hDL321aXq4rXhb8n56_qPCpv8hvU4RCcTCA/viewform';
     function handleFeedbackClick() {
@@ -61,6 +62,7 @@
     const size = 10;
     const letters = "ABCDEFGHIJ";
     let gameOver= false;
+
     function loadBoard() {
         const table = document.getElementById('board');
         table.innerHTML = '';
@@ -94,7 +96,7 @@
             }
 
         }
-
+    }
         function updateBoard(row, col, newState) {
             const table = document.getElementById("board");
             const cell = table.rows[row + 1].cells[col + 1];
@@ -145,7 +147,6 @@
                 }
             }
         }
-    }
 
     // Load board on page
     window.onload = async function () {
