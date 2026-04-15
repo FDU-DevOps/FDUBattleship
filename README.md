@@ -15,6 +15,8 @@ Then, run the command java -jar FDUBattleship-1.0-SNAPSHOT.jar
 Finally, open a browser and go to either localhost:8090 or 127.0.0.1:8090
 
 # Update Log
+* Version 1.0-DEVOPS-553
+  * Updated number of guesses for Battleship
 * Version 1.0-DEVOPS-516
      * Added README File
 * Version 1.0-DEVOPS-496

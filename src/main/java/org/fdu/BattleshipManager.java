@@ -17,7 +17,7 @@ public class BattleshipManager {
     // Fixed board dimension, both axes are 10x10 throughout the entire game
     private static final int SIZE = 10;
     // Total number of attacks the player is allowed before the game is lost
-    private static final int MAX_GUESSES = 10;
+    private static final int MAX_GUESSES = 30;
 
     // Reassigned each turn with the updated DTO returned by AttackProcessor, not mutated in place
     private PlayerDTO humanDTO;

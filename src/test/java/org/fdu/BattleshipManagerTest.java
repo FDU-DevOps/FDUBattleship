@@ -58,7 +58,7 @@ class BattleshipManagerTest {
     @Test
     @DisplayName("Init: human starts with 10 guesses")
     void humanStartsWithTenGuesses() {
-        assertEquals(10, manager.getHumanDTO().guessesLeft());
+        assertEquals(30, manager.getHumanDTO().guessesLeft());
     }
 
     @Test

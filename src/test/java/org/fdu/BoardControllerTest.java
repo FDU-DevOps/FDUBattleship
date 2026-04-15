@@ -16,7 +16,7 @@ class BoardControllerTest {
 
         int response = controller.startGame(session);
 
-        assertEquals(10, response);
+        assertEquals(30, response);
         assertNotNull(session.getAttribute("game"));
     }
 

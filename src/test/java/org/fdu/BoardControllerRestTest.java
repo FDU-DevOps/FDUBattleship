@@ -133,7 +133,7 @@ class BoardControllerRestTest {
 
         // a 2nd hit - use assertResponse helper function
         AttackResponseDTO hitResponse = attack(userA, 9, 9);
-        assertResponse(hitResponse, 9, "in_progress", "hit", false);
+        assertResponse(hitResponse, 29, "in_progress", "hit", false);
 
         // print out the DTOs for reference
         computerStatus = getComputerStatus(userA);
@@ -159,19 +159,19 @@ class BoardControllerRestTest {
 
         // let's try a miss, 2 hits, a miss and another hit
         AttackResponseDTO hitResponse = attack(userA, 5, 5);
-        assertResponse(hitResponse, 9, "in_progress", "miss", false);
+        assertResponse(hitResponse, 29, "in_progress", "miss", false);
 
         hitResponse = attack(userA, 1, 0);
-        assertResponse(hitResponse, 9, "in_progress", "hit", false);
+        assertResponse(hitResponse, 29, "in_progress", "hit", false);
 
         hitResponse = attack(userA, 2, 0);
-        assertResponse(hitResponse, 9, "in_progress", "hit", false);
+        assertResponse(hitResponse, 29, "in_progress", "hit", false);
 
         hitResponse = attack(userA, 9, 0);  // miss
-        assertResponse(hitResponse, 8, "in_progress", "miss", false);
+        assertResponse(hitResponse, 28, "in_progress", "miss", false);
 
         hitResponse = attack(userA, 0, 0);  // sunk my ship
-        assertResponse(hitResponse, 8, "win", "hit", false);
+        assertResponse(hitResponse, 28, "win", "hit", false);
 
     }
 
@@ -189,20 +189,20 @@ class BoardControllerRestTest {
 
         // should now show 5, 5 as a hit and 4, 4 as a miss
         AttackResponseDTO hitResponse = attack(userA, 5, 5);
-        assertResponse(hitResponse, 10, "in_progress", "hit", false);
+        assertResponse(hitResponse, 30, "in_progress", "hit", false);
         // should now show 5, 5 as a hit and 4, 4 as a miss
         hitResponse = attack(userA, 4, 4);
-        assertResponse(hitResponse, 9, "in_progress", "miss", false);
+        assertResponse(hitResponse, 29, "in_progress", "miss", false);
 
         // invalid row and columns - guesses don't change
         hitResponse = attack(userA, -1, 4);
-        assertResponse(hitResponse, 9, "in_progress", "", true);
+        assertResponse(hitResponse, 29, "in_progress", "", true);
         hitResponse = attack(userA, 1, 10);
-        assertResponse(hitResponse, 9, "in_progress", "", true);
+        assertResponse(hitResponse, 29, "in_progress", "", true);
         hitResponse = attack(userA, 5, 5);
-        assertResponse(hitResponse, 9, "in_progress", "already attacked", true);
+        assertResponse(hitResponse, 29, "in_progress", "already attacked", true);
         hitResponse = attack(userA, 4, 4);
-        assertResponse(hitResponse, 9, "in_progress", "already attacked", true);
+        assertResponse(hitResponse, 29, "in_progress", "already attacked", true);
     }
 
     @Test
@@ -231,17 +231,17 @@ class BoardControllerRestTest {
 
         // 5, 5 is a hit, 0, 0 a miss
         AttackResponseDTO response = attack(userA, 5, 5);
-        assertResponse(response, 10, "in_progress", "hit", false);
+        assertResponse(response, 30, "in_progress", "hit", false);
         // should now show 5, 5 as a hit and 4, 4 as a miss
         response = attack(userA, 0, 0);
-        assertResponse(response, 9, "in_progress", "miss", false);
+        assertResponse(response, 29, "in_progress", "miss", false);
 
         // 0, 0 is a hit, 5, 5 a miss
         response = attack(userB, 5, 5);
-        assertResponse(response, 9, "in_progress", "miss", false);
+        assertResponse(response, 29, "in_progress", "miss", false);
         // should now show 5, 5 as a hit and 4, 4 as a miss
         response = attack(userB, 0, 0);
-        assertResponse(response, 9, "in_progress", "hit", false);
+        assertResponse(response, 29, "in_progress", "hit", false);
 
     }
 
