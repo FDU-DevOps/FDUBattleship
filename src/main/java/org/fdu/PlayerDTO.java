@@ -14,10 +14,12 @@ package org.fdu;
  *                    after each attack to reflect HIT or MISS.
  *                    For computerDTO: the ship grid containing SHIP, WATER,
  *                    or HIT cells.
+ * @param homeGrid    The human player's home board, where computer attacks land.
+ *                    Contains SHIP, WATER, HIT, MISS. Null on computerDTO.
  * @param guessesLeft The number of guesses the human player has remaining.
  *                    Decremented by one after each MISS. Set to 0 on
  *                    computerDTO as it is unused for the computer side.
  * @param gameStatus  The current status of the game: IN_PROGRESS, WIN, or LOSS.
  */
 
-public record PlayerDTO(Cell[][] grid, int guessesLeft, GameStatus gameStatus) {}
+public record PlayerDTO(Cell[][] grid,Cell[][] homeGrid, int guessesLeft, GameStatus gameStatus) {}
