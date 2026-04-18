@@ -43,13 +43,11 @@
             color: white;
         }
 
-        /* NEW: orange outline on the last cell the computer attacked */
         .last-computer-move {
             outline: 3px solid orange;
             outline-offset: -3px;
         }
 
-        /* NEW: flex container to place both boards side by side */
         .boards-container {
             display: flex;
             justify-content: center;
@@ -63,43 +61,39 @@
             color: #333;
         }
 
-        /* NEW: crosshair cursor instead of just usual mouse */
-        #computer-board td.water {
-            cursor: crosshair;
-        }
+        #computer-board td.water { cursor: crosshair; }
+        #computer-board td.hit,
+        #computer-board td.miss { cursor: not-allowed; }
+
+        #human-board td { cursor: default; }
+
     </style>
 </head>
 <body>
 <h1>BATTLESHIP</h1>
 <p id="version"></p>
-<script>
-    async function loadVersion() {
-        const response = await fetch("api/version");
-        const version = await response.text(); //https://stackoverflow.com/questions/41946457/getting-text-from-fetch-response-object
-        document.getElementById("version").innerText = "Version: " + version;
-    }
-    loadVersion();
-</script>
 
 <!--BOARDS -->
 <div class="boards-container">
     <div class="board-section">
-        <h2>Your Attacks on Enemy</h2>
-        <table id="computer-board"></table>
+        <h2>Your Board</h2>
+        <table id="human-board"></table>
+        <h2>Computer's Attack</h2>
+        <p class="board-message" id="computer-message"></p>
     </div>
     <div class="board-section">
-        <h2>Your Fleet (Computer Attacks Here)</h2>
-        <table id="human-board"></table>
+        <h2>Computer's Board</h2>
+        <table id="computer-board"></table>
+        <h2>Your attack</h2>
+        <p class="board-message" id="message"></p>
     </div>
 </div>
 
-<h3>Your move:</h3>
-<p id="message"></p>
-<h3>Computer move:</h3>
-<p id="computer-message"></p>
-
 <h3 id="guesses-left"></h3>
+
 <button id="userFeedbackButton" onclick="handleFeedbackClick()">Submit Game Feedback</button>
+</body>
+
 <script>
     const USER_FEEDBACK_LINK = 'https://docs.google.com/forms/d/e/1FAIpQLSdr2xzx1jbwUW6hDL321aXq4rXhb8n56_qPCpv8hvU4RCcTCA/viewform';
     function handleFeedbackClick() {
@@ -109,6 +103,7 @@
     const letters = "ABCDEFGHIJ";
     let gameOver= false;
 
+    <!--FUNCTION TO LOAD THE BOARD-->
     function loadBoard(tableId, clickable) {
         const table = document.getElementById(tableId);
         table.innerHTML = '';
@@ -139,42 +134,8 @@
             }
         }
     }
-    function updateComputerBoardCell(row, col, newState) {
-        const table = document.getElementById("computer-board");
-        const cell = table.rows[row + 1].cells[col + 1];
-        if (newState === "hit") {
-            cell.className = "hit";
-            cell.textContent = "X";
-        } else {
-            cell.className = "miss";
-            cell.textContent = "O";
-        }
-        cell.onclick = null;
-        cell.style.cursor = "default";
-    }
 
-    function renderHumanBoard(homeGrid) {
-        const table = document.getElementById("human-board");
-        for (let r = 0; r < homeGrid.length; r++) {
-            for (let c = 0; c < homeGrid[r].length; c++) {
-                const cell = table.rows[r + 1].cells[c + 1];
-                const state = homeGrid[r][c];
-                cell.className = state;
-                if (state === "hit")       cell.textContent = "X";
-                else if (state === "miss") cell.textContent = "O";
-                else if (state === "ship") cell.textContent = "#";
-                else                       cell.textContent = "~";
-            }
-        }
-    }
-
-    function highlightLastComputerMove(row, col) {
-        const prev = document.querySelector(".last-computer-move");
-        if (prev) prev.classList.remove("last-computer-move");
-        const table = document.getElementById("human-board");
-        table.rows[row + 1].cells[col + 1].classList.add("last-computer-move");
-    }
-
+    <!--SUBMIT ATTACK-->
     async function submitAttack(row, col) {
         if (gameOver) return;
 
@@ -193,16 +154,15 @@
 
         updateComputerBoardCell(row, col, data.grid[row][col]);
 
-        /* NEW: repaint the whole human-board and highlight the computer's move */
+        /* Repaint the whole human-board and highlight the computer's move */
         renderHumanBoard(data.homeGrid);
         if (data.computerRow >= 0) {
             highlightLastComputerMove(data.computerRow, data.computerCol);
         }
-        /* END NEW */
 
         document.getElementById("guesses-left").innerText = `Guesses left: ${data.guessesLeft}`;
 
-        /* NEW: show both player and computer messages, handle WIN/LOSS */
+        /* Show both player and computer messages, handle WIN/LOSS */
         document.getElementById("message").innerText = data.message;
         document.getElementById("computer-message").innerText = data.computerMessage || "";
 
@@ -214,26 +174,67 @@
                 document.getElementById("message").innerText = "Computer Wins!";
             }
         }
-        /* END NEW */
     }
 
-    // Load board on page
+    <!--UPDATE COMPUTER'S BOARD-->
+    function updateComputerBoardCell(row, col, newState) {
+        const table = document.getElementById("computer-board");
+        const cell = table.rows[row + 1].cells[col + 1];
+        if (newState === "hit") {
+            cell.className = "hit";
+            cell.textContent = "X";
+        } else {
+            cell.className = "miss";
+            cell.textContent = "O";
+        }
+    }
+
+    <!--UPDATE HUMAN'S BOARD-->
+    function renderHumanBoard(homeGrid) {
+        const table = document.getElementById("human-board");
+        for (let r = 0; r < homeGrid.length; r++) {
+            for (let c = 0; c < homeGrid[r].length; c++) {
+                const cell = table.rows[r + 1].cells[c + 1];
+                const state = homeGrid[r][c].toLowerCase();
+                cell.className = state;
+                if (state === "hit")       cell.textContent = "X";
+                else if (state === "miss") cell.textContent = "O";
+                else if (state === "ship") cell.textContent = "#";
+                else                       cell.textContent = "~";
+            }
+        }
+    }
+
+    <!--HIGHLIGHT COMPUTER'S MOVE-->
+    function highlightLastComputerMove(row, col) {
+        const prev = document.querySelector(".last-computer-move");
+        if (prev) prev.classList.remove("last-computer-move");
+        const table = document.getElementById("human-board");
+        table.rows[row + 1].cells[col + 1].classList.add("last-computer-move");
+    }
+
+    async function loadVersion() {
+        const response = await fetch("api/version");
+        const version = await response.text(); //https://stackoverflow.com/questions/41946457/getting-text-from-fetch-response-object
+        document.getElementById("version").innerText = "Version: " + version;
+    }
+
+    <!--LOAD BOARD-->
     window.onload = async function () {
         const response = await fetch("api/battleship/start-game", { method: "POST" });
         const guessesLeft = await response.json();
         document.getElementById("guesses-left").innerText = `Guesses left: ${guessesLeft}`;
 
-        /* NEW: build both boards, computer-board is clickable, human-board is not */
+        /* Build both boards, computer-board is clickable, human-board is not */
         loadBoard("computer-board", true);
         loadBoard("human-board", false);
-        /* END NEW */
 
-        /* NEW: fetch humanStatus so the player's ships show up before the first attack */
+        /* Fetch humanStatus so the player's ships show up before the first attack */
         const statusResponse = await fetch("api/battleship/humanStatus");
         const humanDTO = await statusResponse.json();
         renderHumanBoard(humanDTO.homeGrid);
-        /* END NEW */
+        loadVersion();
     };
+
 </script>
-</body>
 </html>

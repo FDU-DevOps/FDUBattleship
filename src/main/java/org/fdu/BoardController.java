@@ -42,8 +42,7 @@ public class BoardController {
     public AttackResponseDTO attack(@RequestBody AttackRequestDTO request,
                                     HttpSession session) {
 
-        BattleshipManager manager =
-                (BattleshipManager) session.getAttribute("game");
+        BattleshipManager manager = (BattleshipManager) session.getAttribute("game");
 
         if (manager == null) {
             return new AttackResponseDTO(
@@ -90,7 +89,7 @@ public class BoardController {
         AttackProcessor processor = manager.getAttackProcessor();
         PlayerDTO[] result = processor.processAttack(row, col, human, computer);
 
-        PlayerDTO updatedHuman    = result[0];
+        PlayerDTO updatedHuman = result[0];
         PlayerDTO updatedComputer = result[1];
 
         manager.setHumanDTO(updatedHuman);

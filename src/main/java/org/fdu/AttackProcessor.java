@@ -53,19 +53,19 @@ public class AttackProcessor {
         lastComputerCol = -1;
 
         // Deep-copy all grids so incoming DTOs remain immutable
-        Cell[][] newShipGrid     = copyGrid(computerDTO.grid());
+        Cell[][] newShipGrid = copyGrid(computerDTO.grid());
         Cell[][] newTrackingGrid = copyGrid(humanDTO.grid());
-        Cell[][] newHomeGrid     = copyGrid(humanDTO.homeGrid());
+        Cell[][] newHomeGrid = copyGrid(humanDTO.homeGrid());
 
         // ----------------------------------------------------------------
-        // 1. Resolve player's attack
+        // Resolve player's attack
         // ----------------------------------------------------------------
         Cell target = newShipGrid[row][col];
         if (target == Cell.SHIP) {
-            newShipGrid[row][col]     = Cell.HIT;
+            newShipGrid[row][col] = Cell.HIT;
             newTrackingGrid[row][col] = Cell.HIT;
         } else {
-            newShipGrid[row][col]     = Cell.MISS;
+            newShipGrid[row][col] = Cell.MISS;
             newTrackingGrid[row][col] = Cell.MISS;
         }
 
@@ -74,19 +74,41 @@ public class AttackProcessor {
                 : humanDTO.guessesLeft() - 1;
 
         // ----------------------------------------------------------------
-        // 2. Check if the player just won
+        // 2. Check if guesses reached 0
+        // ----------------------------------------------------------------
+        if (guessesLeft <= 0) {
+            System.out.println("Player ran out of guesses. Computer wins!");
+
+            PlayerDTO updatedHuman = new PlayerDTO(
+                    newTrackingGrid,
+                    newHomeGrid,
+                    0,
+                    GameStatus.LOSS
+            );
+
+            PlayerDTO updatedComputer = new PlayerDTO(
+                    newShipGrid,
+                    null,
+                    0,
+                    GameStatus.WIN
+            );
+
+            return new PlayerDTO[]{updatedHuman, updatedComputer};
+        }
+
+        // ----------------------------------------------------------------
+        // Check if the player just won
         // ----------------------------------------------------------------
         boolean playerWon = allShipsSunk(newShipGrid);
         if (playerWon) {
-            PlayerDTO updatedHuman    = new PlayerDTO(newTrackingGrid, newHomeGrid,
-                    guessesLeft, GameStatus.WIN);
+            PlayerDTO updatedHuman = new PlayerDTO(newTrackingGrid, newHomeGrid, guessesLeft, GameStatus.WIN);
             PlayerDTO updatedComputer = new PlayerDTO(newShipGrid, null, 0, GameStatus.IN_PROGRESS);
             System.out.println("Player wins! All computer ships sunk.");
             return new PlayerDTO[]{ updatedHuman, updatedComputer };
         }
 
         // ----------------------------------------------------------------
-        // 3. Computer's random move on the human's home grid
+        // Computer's random move on the human's home grid
         // ----------------------------------------------------------------
         int[] computerMove = pickRandomUnattackedCell(newHomeGrid);
         lastComputerRow = computerMove[0];
@@ -104,15 +126,15 @@ public class AttackProcessor {
                 + " -> " + (homeTarget == Cell.SHIP ? "HIT" : "MISS"));
 
         // ----------------------------------------------------------------
-        // 4. Check if the computer just won
+        // Check if the computer just won
         // ----------------------------------------------------------------
         boolean computerWon = allShipsSunk(newHomeGrid);
+
         GameStatus humanStatus = computerWon ? GameStatus.LOSS : GameStatus.IN_PROGRESS;
 
         if (computerWon) System.out.println("Computer wins! All player ships sunk.");
 
-        PlayerDTO updatedHuman    = new PlayerDTO(newTrackingGrid, newHomeGrid,
-                guessesLeft, humanStatus);
+        PlayerDTO updatedHuman = new PlayerDTO(newTrackingGrid, newHomeGrid, guessesLeft, humanStatus);
         PlayerDTO updatedComputer = new PlayerDTO(newShipGrid, null, 0, GameStatus.IN_PROGRESS);
         return new PlayerDTO[]{ updatedHuman, updatedComputer };
     }

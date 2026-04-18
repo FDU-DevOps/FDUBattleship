@@ -117,7 +117,7 @@ class BattleshipManagerTest {
     void setHumanDTOReplacesPreviousDTO() {
         Cell[][] blank = new Cell[10][10];
         for (Cell[] row : blank) java.util.Arrays.fill(row, Cell.WATER);
-        PlayerDTO replacement = new PlayerDTO(blank, 3, GameStatus.IN_PROGRESS);
+        PlayerDTO replacement = new PlayerDTO(blank, null,3, GameStatus.IN_PROGRESS);
 
         manager.setHumanDTO(replacement);
 
@@ -129,7 +129,7 @@ class BattleshipManagerTest {
     void setComputerDTOReplacesPreviousDTO() {
         Cell[][] blank = new Cell[10][10];
         for (Cell[] row : blank) java.util.Arrays.fill(row, Cell.WATER);
-        PlayerDTO replacement = new PlayerDTO(blank, 0, GameStatus.IN_PROGRESS);
+        PlayerDTO replacement = new PlayerDTO(blank, null,0, GameStatus.IN_PROGRESS);
 
         manager.setComputerDTO(replacement);
 

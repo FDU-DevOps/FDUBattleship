@@ -52,7 +52,7 @@ public class BattleshipManager {
      */
 
     public void initializeGame() {
-        battleBoard     = new BattleBoard();
+        battleBoard = new BattleBoard();
         attackProcessor = new AttackProcessor();
 
         int[] shipLengths = {5, 4, 3, 3, 2};
