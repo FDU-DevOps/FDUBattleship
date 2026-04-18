@@ -2,7 +2,7 @@ package org.fdu;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Random;
 
 /**
  * Service class responsible for processing a player's attack against the
@@ -22,9 +22,18 @@ public class AttackProcessor {
 
     private int lastComputerRow = -1;
     private int lastComputerCol = -1;
+    private final Random random;
 
     public int getLastComputerRow() { return lastComputerRow; }
     public int getLastComputerCol() { return lastComputerCol; }
+
+    public AttackProcessor() {
+        this.random = new Random();
+    }
+
+    public AttackProcessor(Random random) {
+        this.random = random;
+    }
 
     /**
      * Processes a single attack from the player against the computer's board.
@@ -201,7 +210,7 @@ public class AttackProcessor {
                 if (grid[r][c] != Cell.HIT && grid[r][c] != Cell.MISS)
                     available.add(new int[]{ r, c });
 
-        int idx = ThreadLocalRandom.current().nextInt(available.size());
+        int idx = random.nextInt(available.size());
         return available.get(idx);
     }
 }

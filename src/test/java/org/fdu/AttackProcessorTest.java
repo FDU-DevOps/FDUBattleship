@@ -3,6 +3,7 @@ package org.fdu;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -15,7 +16,7 @@ class AttackProcessorTest {
 
     @BeforeEach
     void setUp() {
-        processor = new AttackProcessor();
+        processor = new AttackProcessor(new Random(42));
 
         // 10x10 grids, all WATER by default
         shipGrid = new Cell[10][10];
@@ -36,6 +37,7 @@ class AttackProcessorTest {
         // One human ship at (5,5) needed so computer win check
         // does not trigger LOSS on the very first move
         homeGrid[5][5] = Cell.SHIP;
+        homeGrid[6][6] = Cell.SHIP;
     }
 
     @Test
