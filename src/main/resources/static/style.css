@@ -1,0 +1,63 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+h1 {
+    margin-bottom: 20px;
+}
+table {
+    border-collapse: collapse;
+    margin: 0 auto;
+}
+td, th {
+    width: 40px;
+    height: 40px;
+    text-align: center;
+    border: 1px solid black;
+    font-weight: bold;
+}
+/* Labels */
+.label {
+    background-color: #ddd;
+}
+/* Cell States */
+.water {
+    background-color: #79afd2;
+    color: white;
+}
+.hit {
+    background-color: #e74c3c;
+    color: white;
+}
+.miss {
+    background-color: #ecf0f1;
+    color: black; }
+/* NEW: ship cell style for human-board, shows the player's own ships */
+.ship {
+    background-color: #5d8a61;
+    color: white;
+}
+
+.last-computer-move {
+    outline: 3px solid orange;
+    outline-offset: -3px;
+}
+
+.boards-container {
+    display: flex;
+    justify-content: center;
+    gap: 60px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+.board-section h2 {
+    margin-bottom: 10px;
+    font-size: 16px;
+    color: #333;
+}
+
+#computer-board td.water { cursor: crosshair; }
+#computer-board td.hit,
+#computer-board td.miss { cursor: not-allowed; }
+
+#human-board td { cursor: default; }
