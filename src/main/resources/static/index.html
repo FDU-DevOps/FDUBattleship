@@ -37,6 +37,36 @@
         .miss {
             background-color: #ecf0f1;
             color: black; }
+        /* NEW: ship cell style for human-board, shows the player's own ships */
+        .ship {
+            background-color: #5d8a61;
+            color: white;
+        }
+
+        /* NEW: orange outline on the last cell the computer attacked */
+        .last-computer-move {
+            outline: 3px solid orange;
+            outline-offset: -3px;
+        }
+
+        /* NEW: flex container to place both boards side by side */
+        .boards-container {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .board-section h2 {
+            margin-bottom: 10px;
+            font-size: 16px;
+            color: #333;
+        }
+
+        /* NEW: crosshair cursor instead of just usual mouse */
+        #computer-board td.water {
+            cursor: crosshair;
+        }
     </style>
 </head>
 <body>
@@ -50,9 +80,24 @@
     }
     loadVersion();
 </script>
-<table id="board"></table>
-<h3>Response:</h3>
+
+<!--BOARDS -->
+<div class="boards-container">
+    <div class="board-section">
+        <h2>Your Attacks on Enemy</h2>
+        <table id="computer-board"></table>
+    </div>
+    <div class="board-section">
+        <h2>Your Fleet (Computer Attacks Here)</h2>
+        <table id="human-board"></table>
+    </div>
+</div>
+
+<h3>Your move:</h3>
 <p id="message"></p>
+<h3>Computer move:</h3>
+<p id="computer-message"></p>
+
 <h3 id="guesses-left"></h3>
 <button id="userFeedbackButton" onclick="handleFeedbackClick()">Submit Game Feedback</button>
 <script>
@@ -64,10 +109,10 @@
     const letters = "ABCDEFGHIJ";
     let gameOver= false;
 
-    function loadBoard() {
-        const table = document.getElementById('board');
+    function loadBoard(tableId, clickable) {
+        const table = document.getElementById(tableId);
         table.innerHTML = '';
-        // Top header row (A–J)
+        // Top header row (A-J)
         const headerRow = table.insertRow();
         headerRow.insertCell(); // empty corner
         for (let j = 0; j < size; j++) {
@@ -76,85 +121,118 @@
             th.className = "label";
             headerRow.appendChild(th);
         }
-        // Predefined cells for demonstration
-
         for (let i = 0; i < size; i++) {
             const row = table.insertRow();
-
             const labelCell = document.createElement("th");
             labelCell.textContent = i + 1;
             labelCell.className = "label";
             row.appendChild(labelCell);
             for (let j = 0; j < size; j++) {
                 const cell = row.insertCell();
-                // Default WATER
                 cell.className = "water";
                 cell.textContent = "~";
-
-                cell.onclick = function () {
-                    submitAttack(i, j);
-                };
+                if (clickable) {
+                    cell.onclick = function () {
+                        submitAttack(i, j);
+                    };
+                }
             }
-
         }
     }
-        function updateBoard(row, col, newState) {
-            const table = document.getElementById("board");
-            const cell = table.rows[row + 1].cells[col + 1];
+    function updateComputerBoardCell(row, col, newState) {
+        const table = document.getElementById("computer-board");
+        const cell = table.rows[row + 1].cells[col + 1];
+        if (newState === "hit") {
+            cell.className = "hit";
+            cell.textContent = "X";
+        } else {
+            cell.className = "miss";
+            cell.textContent = "O";
+        }
+        cell.onclick = null;
+        cell.style.cursor = "default";
+    }
 
-
-            if (newState === "hit") {
-                cell.className = "hit";
-                cell.textContent = "X";
-            } else {
-                cell.className = "miss";
-                cell.textContent = "O";
+    function renderHumanBoard(homeGrid) {
+        const table = document.getElementById("human-board");
+        for (let r = 0; r < homeGrid.length; r++) {
+            for (let c = 0; c < homeGrid[r].length; c++) {
+                const cell = table.rows[r + 1].cells[c + 1];
+                const state = homeGrid[r][c];
+                cell.className = state;
+                if (state === "hit")       cell.textContent = "X";
+                else if (state === "miss") cell.textContent = "O";
+                else if (state === "ship") cell.textContent = "#";
+                else                       cell.textContent = "~";
             }
         }
-        async function submitAttack(row, col) {
+    }
 
-            if (gameOver) return;
+    function highlightLastComputerMove(row, col) {
+        const prev = document.querySelector(".last-computer-move");
+        if (prev) prev.classList.remove("last-computer-move");
+        const table = document.getElementById("human-board");
+        table.rows[row + 1].cells[col + 1].classList.add("last-computer-move");
+    }
 
-            const response = await fetch("api/battleship/attack", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ row: row, column: col })
-            });
+    async function submitAttack(row, col) {
+        if (gameOver) return;
 
-            const data = await response.json();
+        const response = await fetch("api/battleship/attack", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ row: row, column: col })
+        });
 
-            if (data.isError) {
-                document.getElementById("message").innerText="Cell already attacked.";
-                return;
-            }
+        const data = await response.json();
 
-            const newState = data.grid[row][col];
-            updateBoard(row, col, newState);
+        if (data.isError) {
+            document.getElementById("message").innerText = "Cell already attacked.";
+            return;
+        }
 
-            document.getElementById("guesses-left").innerText = `Guesses left: ${data.guessesLeft}`;
+        updateComputerBoardCell(row, col, data.grid[row][col]);
 
-            if (data.gameStatus === "IN_PROGRESS") {
-                if (newState === "hit") {
-                    document.getElementById("message").innerText = "Hit!";
-                } else {
-                    document.getElementById("message").innerText = "Miss!";
-                }
+        /* NEW: repaint the whole human-board and highlight the computer's move */
+        renderHumanBoard(data.homeGrid);
+        if (data.computerRow >= 0) {
+            highlightLastComputerMove(data.computerRow, data.computerCol);
+        }
+        /* END NEW */
+
+        document.getElementById("guesses-left").innerText = `Guesses left: ${data.guessesLeft}`;
+
+        /* NEW: show both player and computer messages, handle WIN/LOSS */
+        document.getElementById("message").innerText = data.message;
+        document.getElementById("computer-message").innerText = data.computerMessage || "";
+
+        if (data.gameStatus !== "IN_PROGRESS") {
+            gameOver = true;
+            if (data.gameStatus === "WIN") {
+                document.getElementById("message").innerText = "You Won!";
             } else {
-                gameOver = true;
-                if (data.gameStatus === "WIN") {
-                    document.getElementById("message").innerText = "You Won!";
-                } else {
-                    document.getElementById("message").innerText = "You Lose!";
-                }
+                document.getElementById("message").innerText = "Computer Wins!";
             }
         }
+        /* END NEW */
+    }
 
     // Load board on page
     window.onload = async function () {
         const response = await fetch("api/battleship/start-game", { method: "POST" });
         const guessesLeft = await response.json();
         document.getElementById("guesses-left").innerText = `Guesses left: ${guessesLeft}`;
-        loadBoard();
+
+        /* NEW: build both boards, computer-board is clickable, human-board is not */
+        loadBoard("computer-board", true);
+        loadBoard("human-board", false);
+        /* END NEW */
+
+        /* NEW: fetch humanStatus so the player's ships show up before the first attack */
+        const statusResponse = await fetch("api/battleship/humanStatus");
+        const humanDTO = await statusResponse.json();
+        renderHumanBoard(humanDTO.homeGrid);
+        /* END NEW */
     };
 </script>
 </body>
