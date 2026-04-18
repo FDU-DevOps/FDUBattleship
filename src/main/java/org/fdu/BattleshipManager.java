@@ -38,25 +38,41 @@ public class BattleshipManager {
      */
 
     public BattleshipManager() { }
+
+    /**
+     * Constructs and initializes all game components for a new session.
+     * <p>
+     * Creates a stateless BattleBoard renderer and AttackProcessor. Builds the
+     * computer's ship grid with ships placed randomly. Builds the human player's
+     * home grid with the same fleet placed randomly, which will be shown to the
+     * player and targeted by the computer. Builds the human player's blank
+     * tracking grid for recording hits and misses on computer ships.
+     * Both sides use the same fleet: ship lengths {5, 4, 3, 3, 2}.
+     * </p>
+     */
+
     public void initializeGame() {
         battleBoard     = new BattleBoard();
         attackProcessor = new AttackProcessor();
 
-        // Fill every cell with WATER first, then overwrite one cell with the ship
+        int[] shipLengths = {5, 4, 3, 3, 2};
+
+        // --- Computer's ship grid ---
         Cell[][] shipGrid = new Cell[SIZE][SIZE];
         for (Cell[] row : shipGrid) java.util.Arrays.fill(row, Cell.WATER);
+        for (int shipLen : shipLengths) placeShip(shipGrid, shipLen);
+        computerDTO = new PlayerDTO(shipGrid, null, 0, GameStatus.IN_PROGRESS);
 
-        // Initializes and places ships inside of grid
-        int[] shipLengths = {5, 4, 3, 3, 2};
-        for (int shipLen : shipLengths) {
-            placeShip(shipGrid, shipLen);
-        }
+        // --- Human's home grid (ships placed randomly, shown to the player) ---
+        Cell[][] homeGrid = new Cell[SIZE][SIZE];
+        for (Cell[] row : homeGrid) java.util.Arrays.fill(row, Cell.WATER);
+        for (int shipLen : shipLengths) placeShip(homeGrid, shipLen);
 
-        computerDTO = new PlayerDTO(shipGrid, 0, GameStatus.IN_PROGRESS);
-        // Human starts with a fully blank tracking grid and the maximum allowed guesses
+        // --- Human's tracking grid (blank, updated as player attacks) ---
         Cell[][] trackingGrid = new Cell[SIZE][SIZE];
         for (Cell[] row : trackingGrid) java.util.Arrays.fill(row, Cell.WATER);
-        humanDTO = new PlayerDTO(trackingGrid, MAX_GUESSES, GameStatus.IN_PROGRESS);
+
+        humanDTO = new PlayerDTO(trackingGrid, homeGrid, MAX_GUESSES, GameStatus.IN_PROGRESS);
     }
 
 
