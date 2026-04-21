@@ -9,23 +9,32 @@ import java.util.Random;
  * computer's ship grid.
  * <p>
  * Receives the player's guess coordinates along with both PlayerDTO instances,
- * resolves whether the attack is a HIT or MISS, and returns updated versions
- * of both as a PlayerDTO array. BattleShipManager delegates all guess
- * processing here rather than performing grid checks directly.
+ * resolves whether the attack is a HIT, MISS, or ship-sunk event, and returns
+ * updated versions of both as a PlayerDTO array. BattleShipManager delegates
+ * all guess processing here rather than performing grid checks directly.
  * </p>
- * Design assumes a single grid for each player (computer is another player)
- * Renderer will display water when displaying a ship that has not been hit
- * Note: could create another renderer that displays the ships (for the player)
+ * <p>
+ * After each call, getLastSunkShip() and getLastHomeSunkShip() expose the ship
+ * that was sunk this turn (if any), so BoardController can build the right
+ * message without coupling the controller to grid logic.
+ * </p>
  */
-
 public class AttackProcessor {
 
     private int lastComputerRow = -1;
     private int lastComputerCol = -1;
+
+    // Ship sunk this turn by the player (null if none)
+    private Ship lastSunkShip = null;
+    // Ship sunk this turn by the computer (null if none)
+    private Ship lastHomeSunkShip = null;
+
     private final Random random;
 
-    public int getLastComputerRow() { return lastComputerRow; }
-    public int getLastComputerCol() { return lastComputerCol; }
+    public int getLastComputerRow()   { return lastComputerRow; }
+    public int getLastComputerCol()   { return lastComputerCol; }
+    public Ship getLastSunkShip()      { return lastSunkShip; }
+    public Ship getLastHomeSunkShip()  { return lastHomeSunkShip; }
 
     public AttackProcessor() {
         this.random = new Random();
@@ -36,28 +45,34 @@ public class AttackProcessor {
     }
 
     /**
-     * Processes a single attack from the player against the computer's board.
+     * Processes a single attack from the player against the computer's board,
+     * then fires the computer's random counter-attack against the human's home grid.
      * <p>
-     * Checks the target cell on computerDTO's grid. If the cell contains SHIP,
-     * the attack is a HIT: both grids are updated to HIT and humanDTO game
-     * status is set to WIN. If the cell contains WATER, the attack is a MISS:
-     * both grids are updated to MISS, guessesLeft is decremented by one, and
-     * if guessesLeft reaches zero game status is set to LOSS.
-     * BattleShipManager derives hit/miss for display by reading
-     * humanDTO.grid()[row][col] after the call, no AttackResult enum needed.
+     * After a HIT, checks whether the struck ship is now fully sunk. If so,
+     * lastSunkShip is set to that ship, otherwise it is null. The same check
+     * runs for the computer's counter-attack against homeShips, stored in
+     * lastHomeSunkShip.
+     * </p>
+     * <p>
+     * Win/loss resolution:
+     * Player wins when allShipsSunk returns true for the computer's grid.
+     * Computer wins when allShipsSunk returns true for the human's home grid.
+     * Guesses-left loss is still present as a fallback.
      * </p>
      *
-     * @param row       the row index of the attack (0-9, maps to 1-10)
-     * @param col       the column index of the attack (0-9, maps to A-J)
+     * @param row         the row index of the attack (0-9, maps to 1-10)
+     * @param col         the column index of the attack (0-9, maps to A-J)
      * @param humanDTO    the current human player state, including tracking grid,
      *                    guesses remaining, and game status
      * @param computerDTO the current computer state, including the ship grid
      * @return PlayerDTO[] of length 2: [0] updated humanDTO, [1] updated computerDTO
      */
-
     public PlayerDTO[] processAttack(int row, int col, PlayerDTO humanDTO, PlayerDTO computerDTO) {
+        // Reset per-turn state
         lastComputerRow = -1;
         lastComputerCol = -1;
+        lastSunkShip = null;
+        lastHomeSunkShip = null;
 
         // Deep-copy all grids so incoming DTOs remain immutable
         Cell[][] newShipGrid = copyGrid(computerDTO.grid());
@@ -71,6 +86,9 @@ public class AttackProcessor {
         if (target == Cell.SHIP) {
             newShipGrid[row][col] = Cell.HIT;
             newTrackingGrid[row][col] = Cell.HIT;
+
+            // Check whether that hit sank a ship
+            lastSunkShip = findSunkShip(computerDTO.ships(), newShipGrid);
         } else {
             newShipGrid[row][col] = Cell.MISS;
             newTrackingGrid[row][col] = Cell.MISS;
@@ -85,8 +103,10 @@ public class AttackProcessor {
         // ----------------------------------------------------------------
         boolean playerWon = allShipsSunk(newShipGrid);
         if (playerWon) {
-            PlayerDTO updatedHuman = new PlayerDTO(newTrackingGrid, newHomeGrid, guessesLeft, GameStatus.WIN);
-            PlayerDTO updatedComputer = new PlayerDTO(newShipGrid, null, 0, GameStatus.LOSS);
+            PlayerDTO updatedHuman = new PlayerDTO(newTrackingGrid, newHomeGrid, guessesLeft,
+                    GameStatus.WIN, humanDTO.ships(), humanDTO.homeShips());
+            PlayerDTO updatedComputer = new PlayerDTO(newShipGrid, null, 0,
+                    GameStatus.LOSS, computerDTO.ships(), null);
             System.out.println("Player wins! All computer ships sunk.");
             return new PlayerDTO[]{ updatedHuman, updatedComputer };
         }
@@ -96,22 +116,11 @@ public class AttackProcessor {
         // ----------------------------------------------------------------
         if (guessesLeft <= 0) {
             System.out.println("Player ran out of guesses. Computer wins!");
-
-            PlayerDTO updatedHuman = new PlayerDTO(
-                    newTrackingGrid,
-                    newHomeGrid,
-                    0,
-                    GameStatus.LOSS
-            );
-
-            PlayerDTO updatedComputer = new PlayerDTO(
-                    newShipGrid,
-                    null,
-                    0,
-                    GameStatus.WIN
-            );
-
-            return new PlayerDTO[]{updatedHuman, updatedComputer};
+            PlayerDTO updatedHuman = new PlayerDTO(newTrackingGrid, newHomeGrid, 0,
+                    GameStatus.LOSS, humanDTO.ships(), humanDTO.homeShips());
+            PlayerDTO updatedComputer = new PlayerDTO(newShipGrid, null, 0,
+                    GameStatus.WIN, computerDTO.ships(), null);
+            return new PlayerDTO[]{ updatedHuman, updatedComputer };
         }
 
         // ----------------------------------------------------------------
@@ -124,30 +133,43 @@ public class AttackProcessor {
         Cell homeTarget = newHomeGrid[lastComputerRow][lastComputerCol];
         if (homeTarget == Cell.SHIP) {
             newHomeGrid[lastComputerRow][lastComputerCol] = Cell.HIT;
+
+            // Check whether that hit sank one of the human ships
+            lastHomeSunkShip = findSunkShip(humanDTO.homeShips(), newHomeGrid);
         } else {
             newHomeGrid[lastComputerRow][lastComputerCol] = Cell.MISS;
         }
-
-        System.out.println("Computer attacks: "
-                + (char)('A' + lastComputerCol) + (lastComputerRow + 1)
-                + " -> " + (homeTarget == Cell.SHIP ? "HIT" : "MISS"));
 
         // ----------------------------------------------------------------
         // Check if the computer just won
         // ----------------------------------------------------------------
         boolean computerWon = allShipsSunk(newHomeGrid);
-
         GameStatus humanStatus = computerWon ? GameStatus.LOSS : GameStatus.IN_PROGRESS;
-
         if (computerWon) System.out.println("Computer wins! All player ships sunk.");
 
-        PlayerDTO updatedHuman = new PlayerDTO(newTrackingGrid, newHomeGrid, guessesLeft, humanStatus);
-        PlayerDTO updatedComputer = new PlayerDTO(newShipGrid, null, 0, GameStatus.IN_PROGRESS);
+        PlayerDTO updatedHuman = new PlayerDTO(newTrackingGrid, newHomeGrid, guessesLeft,
+                humanStatus, humanDTO.ships(), humanDTO.homeShips());
+
+        PlayerDTO updatedComputer = new PlayerDTO(newShipGrid, null, 0,
+                GameStatus.IN_PROGRESS, computerDTO.ships(), null);
         return new PlayerDTO[]{ updatedHuman, updatedComputer };
     }
 
-        // ToDo: improved robustness - check for water explicitly, if not a ship or water, than prior checking failed
-        //   thrown an exception
+    // -------------------------------------------------------------------------
+    // Private helpers
+    // -------------------------------------------------------------------------
+
+    /**
+     * Scans the ship list and returns the first ship that is fully sunk on
+     * the given grid, or null if no ship was sunk this hit.
+     */
+    private Ship findSunkShip(List<Ship> ships, Cell[][] grid) {
+        if (ships == null) return null;
+        for (Ship ship : ships) {
+            if (ship.isSunk(grid)) return ship;
+        }
+        return null;
+    }
 
     /**
      * Creates a deep copy of a 2D Cell array.
@@ -164,7 +186,6 @@ public class AttackProcessor {
     private Cell[][] copyGrid(Cell[][] original) {
         Cell[][] copy = new Cell[original.length][original[0].length];
         for (int i = 0; i < original.length; i++) {
-            // clone() is safe here because Cell is an enum, so its values are shared constants
             copy[i] = original[i].clone();
         }
         return copy;
@@ -198,10 +219,8 @@ public class AttackProcessor {
      * guaranteed as long as the game has not already ended before this is called.
      * </p>
      *
-     * @param grid the human's home grid to choose from
-     * @return int[] of length 2: { row, col } of the chosen cell*
-     * ToDo: throw an exception if the available list is empty, as this would
-     *       indicate the game should have already ended
+     * @param grid the human's home grid
+     * @return int[]{row, col} of the chosen cell
      */
     private int[] pickRandomUnattackedCell(Cell[][] grid) {
         List<int[]> available = new ArrayList<>();
@@ -210,7 +229,6 @@ public class AttackProcessor {
                 if (grid[r][c] != Cell.HIT && grid[r][c] != Cell.MISS)
                     available.add(new int[]{ r, c });
 
-        int idx = random.nextInt(available.size());
-        return available.get(idx);
+        return available.get(random.nextInt(available.size()));
     }
 }
