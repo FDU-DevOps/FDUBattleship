@@ -87,8 +87,8 @@ public class AttackProcessor {
             newShipGrid[row][col] = Cell.HIT;
             newTrackingGrid[row][col] = Cell.HIT;
 
-            // Check whether that hit sank a ship
-            lastSunkShip = findSunkShip(computerDTO.ships(), newShipGrid);
+            // Pass row and col to check ONLY the ship that was hit
+            lastSunkShip = findSunkShip(computerDTO.ships(), newShipGrid, row, col);
         } else {
             newShipGrid[row][col] = Cell.MISS;
             newTrackingGrid[row][col] = Cell.MISS;
@@ -134,9 +134,9 @@ public class AttackProcessor {
         if (homeTarget == Cell.SHIP) {
             newHomeGrid[lastComputerRow][lastComputerCol] = Cell.HIT;
 
-            // Check whether that hit sank one of the human ships
-            lastHomeSunkShip = findSunkShip(humanDTO.homeShips(), newHomeGrid);
-        } else {
+            // Pass lastComputerRow and lastComputerCol
+            lastHomeSunkShip = findSunkShip(humanDTO.homeShips(), newHomeGrid, lastComputerRow, lastComputerCol);
+        }else {
             newHomeGrid[lastComputerRow][lastComputerCol] = Cell.MISS;
         }
 
@@ -160,13 +160,20 @@ public class AttackProcessor {
     // -------------------------------------------------------------------------
 
     /**
-     * Scans the ship list and returns the first ship that is fully sunk on
-     * the given grid, or null if no ship was sunk this hit.
+     * Scans the ship list to find the ship occupying (row, col) and checks
+     * if that specific ship is now fully sunk.
      */
-    private Ship findSunkShip(List<Ship> ships, Cell[][] grid) {
+    private Ship findSunkShip(List<Ship> ships, Cell[][] grid, int row, int col) {
         if (ships == null) return null;
+
         for (Ship ship : ships) {
-            if (ship.isSunk(grid)) return ship;
+            // Check if this ship occupies the cell that was just hit
+            for (int[] cellCoords : ship.cells()) {
+                if (cellCoords[0] == row && cellCoords[1] == col) {
+                    // If this is the ship we hit, check if it's now sunk
+                    return ship.isSunk(grid) ? ship : null;
+                }
+            }
         }
         return null;
     }

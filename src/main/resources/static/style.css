@@ -9,7 +9,7 @@ h1 {
     margin-bottom: 20px;
 }
 
-/* Removes gaps between table borders and centers each board */
+/* Removes gaps between table borders and centers each board ========================================*/
 table {
     border-collapse: collapse;
     margin: 0 auto;
@@ -68,6 +68,38 @@ td, th {
     margin-bottom: 10px;
     font-size: 16px;
     color: #333;
+}
+
+/*
+ * Sunk ship cells: dark background with a black-and-yellow pulsing glow.
+ * Applied to every cell of a ship the moment it is fully destroyed.
+ * Uses !important to override the .hit background so the sunk state
+ * is always visually distinct from a regular hit.
+ */
+/*.sunk {*/
+/*    background-color: #1a1a1a !important;*/
+/*    color: #f1c40f !important;*/
+/*    box-shadow: 0 0 8px 3px #f1c40f, inset 0 0 6px #000;*/
+/*    animation: sunk-pulse 1.2s ease-in-out infinite alternate;*/
+/*}*/
+/*.sunk {*/
+/*    background-color: #1a1a1a !important;*/
+/*    color: #f1c40f !important;*/
+/*    box-shadow: none;*/
+/*    animation: none;*/
+/*    border: 2px solid #f1c40f;*/
+/*}*/
+
+.sunk {
+    background-color: #1a1a1a !important;
+    color: #f1c40f !important;
+    box-shadow: none;
+    animation: none;
+}
+
+@keyframes sunk-pulse {
+    from { box-shadow: 0 0 6px 2px #f1c40f, inset 0 0 4px #000; }
+    to   { box-shadow: 0 0 14px 6px #f39c12, inset 0 0 8px #111; }
 }
 
 /* Shows crosshair cursor for clickable attack cells */
