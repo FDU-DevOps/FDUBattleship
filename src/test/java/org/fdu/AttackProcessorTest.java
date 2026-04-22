@@ -3,6 +3,7 @@ package org.fdu;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import java.util.List;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -18,7 +19,6 @@ class AttackProcessorTest {
     void setUp() {
         processor = new AttackProcessor(new Random(42));
 
-        // 10x10 grids, all WATER by default
         shipGrid = new Cell[10][10];
         trackingGrid = new Cell[10][10];
         homeGrid = new Cell[10][10];
@@ -31,137 +31,95 @@ class AttackProcessorTest {
             }
         }
 
-        // One computer ship at (2,3)
         shipGrid[2][3] = Cell.SHIP;
-
-        // One human ship at (5,5) needed so computer win check
-        // does not trigger LOSS on the very first move
         homeGrid[5][5] = Cell.SHIP;
         homeGrid[6][6] = Cell.SHIP;
+    }
+
+    // Helper to build PlayerDTOs with null ships (not needed for these tests)
+    private PlayerDTO human(int guesses) {
+        return new PlayerDTO(trackingGrid, homeGrid, guesses, GameStatus.IN_PROGRESS, null, null);
+    }
+
+    private PlayerDTO computer() {
+        return new PlayerDTO(shipGrid, null, 0, GameStatus.IN_PROGRESS, null, null);
     }
 
     @Test
     @DisplayName("HIT: returns array of length 2")
     void hitReturnsArrayOfTwo() {
-        PlayerDTO human = new PlayerDTO(trackingGrid, homeGrid, 10, GameStatus.IN_PROGRESS);
-        PlayerDTO computer = new PlayerDTO(shipGrid, null, 0, GameStatus.IN_PROGRESS);
-
-        PlayerDTO[] result = processor.processAttack(2, 3, human, computer);
-
+        PlayerDTO[] result = processor.processAttack(2, 3, human(10), computer());
         assertEquals(2, result.length);
     }
 
     @Test
     @DisplayName("HIT: tracking grid cell is updated to HIT")
     void hitUpdatesTrackingGrid() {
-        PlayerDTO human = new PlayerDTO(trackingGrid, homeGrid, 10, GameStatus.IN_PROGRESS);
-        PlayerDTO computer = new PlayerDTO(shipGrid, null, 0, GameStatus.IN_PROGRESS);
-
-        PlayerDTO[] result = processor.processAttack(2, 3, human, computer);
-
+        PlayerDTO[] result = processor.processAttack(2, 3, human(10), computer());
         assertEquals(Cell.HIT, result[0].grid()[2][3]);
     }
 
     @Test
     @DisplayName("HIT: ship grid cell is updated to HIT")
     void hitUpdatesShipGrid() {
-        PlayerDTO human    = new PlayerDTO(trackingGrid, homeGrid, 10, GameStatus.IN_PROGRESS);
-        PlayerDTO computer = new PlayerDTO(shipGrid, null, 0, GameStatus.IN_PROGRESS);
-
-        PlayerDTO[] result = processor.processAttack(2, 3, human, computer);
-
+        PlayerDTO[] result = processor.processAttack(2, 3, human(10), computer());
         assertEquals(Cell.HIT, result[1].grid()[2][3]);
     }
 
     @Test
     @DisplayName("HIT: human game status is WIN when last computer ship is sunk")
     void hitSetsHumanStatusToWin() {
-        // shipGrid already has exactly one SHIP at (2,3), so hitting it sinks the last ship
-        PlayerDTO human = new PlayerDTO(trackingGrid, homeGrid, 10, GameStatus.IN_PROGRESS);
-        PlayerDTO computer = new PlayerDTO(shipGrid, null, 0, GameStatus.IN_PROGRESS);
-
-        PlayerDTO[] result = processor.processAttack(2, 3, human, computer);
-
+        PlayerDTO[] result = processor.processAttack(2, 3, human(10), computer());
         assertEquals(GameStatus.WIN, result[0].gameStatus());
     }
 
     @Test
     @DisplayName("HIT: guesses remaining are unchanged after hitting a ship")
     void hitDoesNotDecrementGuesses() {
-        PlayerDTO human = new PlayerDTO(trackingGrid, homeGrid, 7, GameStatus.IN_PROGRESS);
-        PlayerDTO computer = new PlayerDTO(shipGrid, null, 0, GameStatus.IN_PROGRESS);
-
-        PlayerDTO[] result = processor.processAttack(2, 3, human, computer);
-
+        PlayerDTO[] result = processor.processAttack(2, 3, human(7), computer());
         assertEquals(7, result[0].guessesLeft());
     }
 
     @Test
     @DisplayName("HIT: status stays IN_PROGRESS when computer ships still remain")
     void hitKeepsInProgressWhenShipsRemain() {
-        // add a second computer ship so the first hit does not end the game
         shipGrid[7][7] = Cell.SHIP;
-
-        PlayerDTO human = new PlayerDTO(trackingGrid, homeGrid, 10, GameStatus.IN_PROGRESS);
-        PlayerDTO computer = new PlayerDTO(shipGrid, null, 0, GameStatus.IN_PROGRESS);
-
-        PlayerDTO[] result = processor.processAttack(2, 3, human, computer);
-
+        PlayerDTO[] result = processor.processAttack(2, 3, human(10), computer());
         assertEquals(GameStatus.IN_PROGRESS, result[0].gameStatus());
     }
 
     @Test
     @DisplayName("MISS: tracking grid cell is updated to MISS")
     void missUpdatesTrackingGrid() {
-        PlayerDTO human = new PlayerDTO(trackingGrid, homeGrid, 5, GameStatus.IN_PROGRESS);
-        PlayerDTO computer = new PlayerDTO(shipGrid, null, 0, GameStatus.IN_PROGRESS);
-
-        PlayerDTO[] result = processor.processAttack(0, 0, human, computer);
-
+        PlayerDTO[] result = processor.processAttack(0, 0, human(5), computer());
         assertEquals(Cell.MISS, result[0].grid()[0][0]);
     }
 
     @Test
     @DisplayName("MISS: ship grid cell is updated to MISS")
     void missUpdatesShipGrid() {
-        PlayerDTO human = new PlayerDTO(trackingGrid, homeGrid, 5, GameStatus.IN_PROGRESS);
-        PlayerDTO computer = new PlayerDTO(shipGrid, null, 0, GameStatus.IN_PROGRESS);
-
-        PlayerDTO[] result = processor.processAttack(0, 0, human, computer);
-
+        PlayerDTO[] result = processor.processAttack(0, 0, human(5), computer());
         assertEquals(Cell.MISS, result[1].grid()[0][0]);
     }
 
     @Test
     @DisplayName("MISS: guesses remaining are decremented by one")
     void missDecrementsGuesses() {
-        PlayerDTO human = new PlayerDTO(trackingGrid, homeGrid, 5, GameStatus.IN_PROGRESS);
-        PlayerDTO computer = new PlayerDTO(shipGrid, null, 0, GameStatus.IN_PROGRESS);
-
-        PlayerDTO[] result = processor.processAttack(0, 0, human, computer);
-
+        PlayerDTO[] result = processor.processAttack(0, 0, human(5), computer());
         assertEquals(4, result[0].guessesLeft());
     }
 
     @Test
     @DisplayName("MISS: status stays IN_PROGRESS when human ships still remain")
     void missKeepsInProgressWhenShipsRemain() {
-        PlayerDTO human = new PlayerDTO(trackingGrid, homeGrid, 3, GameStatus.IN_PROGRESS);
-        PlayerDTO computer = new PlayerDTO(shipGrid, null, 0, GameStatus.IN_PROGRESS);
-
-        PlayerDTO[] result = processor.processAttack(0, 0, human, computer);
-
+        PlayerDTO[] result = processor.processAttack(0, 0, human(3), computer());
         assertEquals(GameStatus.IN_PROGRESS, result[0].gameStatus());
     }
 
     @Test
     @DisplayName("MISS: computer fires and coordinates are recorded")
     void missRecordsComputerMoveCoordinates() {
-        PlayerDTO human = new PlayerDTO(trackingGrid, homeGrid, 5, GameStatus.IN_PROGRESS);
-        PlayerDTO computer = new PlayerDTO(shipGrid, null, 0, GameStatus.IN_PROGRESS);
-
-        processor.processAttack(0, 0, human, computer);
-
+        processor.processAttack(0, 0, human(5), computer());
         assertTrue(processor.getLastComputerRow() >= 0);
         assertTrue(processor.getLastComputerCol() >= 0);
     }
@@ -169,36 +127,18 @@ class AttackProcessorTest {
     @Test
     @DisplayName("LOSS: status is LOSS when computer sinks the last human ship")
     void computerSinksLastShipSetsLoss() {
-        // homeGrid has exactly one SHIP at (5,5), set up in @BeforeEach
-        // force the computer to hit it by pre-marking all other cells as MISS
-        // so (5,5) is the only unattacked cell left
-        for (int r = 0; r < 10; r++) {
-            for (int c = 0; c < 10; c++) {
-                if (r != 5 || c != 5) {
-                    homeGrid[r][c] = Cell.MISS;
-                }
-            }
-        }
+        for (int r = 0; r < 10; r++)
+            for (int c = 0; c < 10; c++)
+                if (r != 5 || c != 5) homeGrid[r][c] = Cell.MISS;
 
-        PlayerDTO human = new PlayerDTO(trackingGrid, homeGrid, 5, GameStatus.IN_PROGRESS);
-        PlayerDTO computer = new PlayerDTO(shipGrid, null, 0, GameStatus.IN_PROGRESS);
-
-        // player misses so computer gets to fire
-        PlayerDTO[] result = processor.processAttack(0, 0, human, computer);
-
+        PlayerDTO[] result = processor.processAttack(0, 0, human(5), computer());
         assertEquals(GameStatus.LOSS, result[0].gameStatus());
     }
 
     @Test
     @DisplayName("LOSS: computer does not fire if player wins on their turn")
     void computerDoesNotFireAfterPlayerWins() {
-        // shipGrid has exactly one SHIP at (2,3), hitting it wins immediately
-        PlayerDTO human = new PlayerDTO(trackingGrid, homeGrid, 10, GameStatus.IN_PROGRESS);
-        PlayerDTO computer = new PlayerDTO(shipGrid, null, 0, GameStatus.IN_PROGRESS);
-
-        processor.processAttack(2, 3, human, computer);
-
-        // lastComputerRow stays -1 because the computer never fired
+        processor.processAttack(2, 3, human(10), computer());
         assertEquals(-1, processor.getLastComputerRow());
         assertEquals(-1, processor.getLastComputerCol());
     }
@@ -206,13 +146,43 @@ class AttackProcessorTest {
     @Test
     @DisplayName("LOSS: status is LOSS when player runs out of guesses")
     void runningOutOfGuessesSetsLoss() {
-        PlayerDTO human = new PlayerDTO(trackingGrid, homeGrid, 1, GameStatus.IN_PROGRESS);
-        PlayerDTO computer = new PlayerDTO(shipGrid, null, 0, GameStatus.IN_PROGRESS);
-
-        PlayerDTO[] result = processor.processAttack(0, 0, human, computer); // miss
-
+        PlayerDTO[] result = processor.processAttack(0, 0, human(1), computer());
         assertEquals(GameStatus.LOSS, result[0].gameStatus());
         assertEquals(0, result[0].guessesLeft());
         assertEquals(GameStatus.WIN, result[1].gameStatus());
     }
+
+    // Ship tests
+    @Test
+    @DisplayName("Ship: isSunk returns false when no cells are hit")
+    void shipIsNotSunkWhenIntact() {
+        Ship ship = new Ship(List.of(new int[]{2, 3}));
+        assertFalse(ship.isSunk(shipGrid));
+    }
+
+    @Test
+    @DisplayName("Ship: isSunk returns true when all cells are hit")
+    void shipIsSunkWhenAllCellsHit() {
+        shipGrid[2][3] = Cell.HIT;
+        Ship ship = new Ship(List.of(new int[]{2, 3}));
+        assertTrue(ship.isSunk(shipGrid));
+    }
+
+    @Test
+    @DisplayName("Ship: isSunk returns false when only some cells are hit")
+    void shipIsNotSunkWhenPartiallySunk() {
+        shipGrid[0][0] = Cell.SHIP;
+        shipGrid[0][1] = Cell.SHIP;
+        shipGrid[0][0] = Cell.HIT;
+        Ship ship = new Ship(List.of(new int[]{0, 0}, new int[]{0, 1}));
+        assertFalse(ship.isSunk(shipGrid));
+    }
+
+    @Test
+    @DisplayName("Ship: size returns correct number of cells")
+    void shipSizeMatchesCellCount() {
+        Ship ship = new Ship(List.of(new int[]{0,0}, new int[]{0,1}, new int[]{0,2}));
+        assertEquals(3, ship.size());
+    }
+
 }

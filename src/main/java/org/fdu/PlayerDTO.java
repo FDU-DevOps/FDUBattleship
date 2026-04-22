@@ -1,4 +1,5 @@
 package org.fdu;
+import java.util.List;
 
 /**
  * Data Transfer Object representing the current state of one side of the game.
@@ -20,6 +21,19 @@ package org.fdu;
  *                    Decremented by one after each MISS. Set to 0 on
  *                    computerDTO as it is unused for the computer side.
  * @param gameStatus  The current status of the game: IN_PROGRESS, WIN, or LOSS.
+ * @param ships       list of Ship objects on this DTO's primary grid.
+ *                    For computerDTO: the computer's fleet on its ship grid.
+ *                    For humanDTO: the human's fleet on the tracking grid
+ *                    (used only for sunk detection on the computer side).
+ * @param homeShips   list of Ship objects on the human's home grid.
+ *                    Only populated on humanDTO so the computer's attacks
+ *                    can be checked for sunk ships. Null on computerDTO.
  */
 
-public record PlayerDTO(Cell[][] grid,Cell[][] homeGrid, int guessesLeft, GameStatus gameStatus) {}
+public record PlayerDTO(Cell[][] grid,
+                        Cell[][] homeGrid,
+                        int guessesLeft,
+                        GameStatus gameStatus,
+                        List<Ship> ships,
+                        List<Ship> homeShips
+) {}

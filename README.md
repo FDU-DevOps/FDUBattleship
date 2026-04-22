@@ -25,13 +25,20 @@ Finally, open a browser and go to either localhost:8090 or 127.0.0.1:8090
     * test.fdugames.org/wordle
     * test.fdugames.org/jenkins
   * Will also support without application change production server as well
-  * Note: once merged, local access will also required explicit path
+  * Note: once merged, local access will also require explicit path
     * e.g. http://localhost:8081/battleship
 * Version 1.0-DEVOPS-374
-  * Added basic player vs computer gameplay mode
+  * Basic player vs computer gameplay mode
   * Player’s ships are automatically pre-placed randomly at the start of the game
   * Computer now makes simple/dummy moves in response to the player’s guesses
   * After each human guess, the computer immediately performs its own guess on the player’s board
+* Version 1.0-DEVOPS-519
+  * Real-time feedback when firing at cells during gameplay
+  * Partial ship hit displays a "Hit!" message
+  * Full ship destruction displays a "[N]-cell ship sunk!" message
+  * Firing at an empty cell displays a "Miss!" message
+  * "You win!" message when all ships are sunk, no further moves accepted
+  * Visual ship status indicator, black and yellow glow effect on fully sunk ships
 
 # Current Known Bugs
 * DEVOPS-509 - Manual build fails to start new build (old build continues to run on server)

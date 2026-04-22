@@ -171,7 +171,7 @@ class BoardControllerRestTest {
         assertResponse(hitResponse, 28, "in_progress", "miss", false);
 
         hitResponse = attack(userA, 0, 0);  // sunk my ship
-        assertResponse(hitResponse, 28, "win", "hit", false);
+        assertResponse(hitResponse, 28, "win", "You win", false);
 
     }
 

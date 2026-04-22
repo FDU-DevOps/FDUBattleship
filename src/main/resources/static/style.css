@@ -1,4 +1,4 @@
-/* Centers all page content and sets a clean default font */
+/* Centers all page content and sets a clean default font  */
 body {
     font-family: Arial, sans-serif;
     text-align: center;
@@ -9,7 +9,7 @@ h1 {
     margin-bottom: 20px;
 }
 
-/* Removes gaps between table borders and centers each board */
+/* Removes gaps between table borders and centers each board*/
 table {
     border-collapse: collapse;
     margin: 0 auto;
@@ -68,6 +68,20 @@ td, th {
     margin-bottom: 10px;
     font-size: 16px;
     color: #333;
+}
+
+/*
+ * Sunk ship cells: dark background with a black-and-yellow pulsing glow.
+ * Applied to every cell of a ship the moment it is fully destroyed.
+ * Uses !important to override the .hit background so the sunk state
+ * is always visually distinct from a regular hit.
+ */
+
+.sunk {
+    background-color: #1a1a1a !important;
+    color: #f1c40f !important;
+    box-shadow: none;
+    animation: none;
 }
 
 /* Shows crosshair cursor for clickable attack cells */

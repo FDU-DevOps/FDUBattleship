@@ -44,6 +44,11 @@ package org.fdu;
  * @param isError         true if the request was invalid and no game state was changed.
  *                        Triggered by out-of-bounds coordinates, a cell already attacked,
  *                        or no active game session found.
+ * @param sunkCells       row/col pairs of every cell belonging to the computer ship the
+ *                        player just sunk, so the frontend can apply a sunk visual.
+ *                        Null when the player's attack did not sink a ship.
+ * @param homeSunkCells   row/col pairs of every cell belonging to the player ship the
+ *                        computer just sunk. Null when the computer did not sink a ship.
  */
 
 public record AttackResponseDTO(
@@ -55,5 +60,7 @@ public record AttackResponseDTO(
         int computerRow,
         int computerCol,
         String computerMessage,
-        boolean isError
+        boolean isError,
+        int[][] sunkCells,
+        int[][] homeSunkCells
 ) {}

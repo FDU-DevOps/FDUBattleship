@@ -13,12 +13,11 @@ import static org.junit.jupiter.api.Assertions.*;
 class BattleshipManagerTest {
 
     private BattleshipManager manager;
-    private ByteArrayOutputStream out;
     private final PrintStream originalOut = System.out;
 
     @BeforeEach
     void setUp() {
-        out = new ByteArrayOutputStream();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
         System.setOut(new PrintStream(out));
         manager = new BattleshipManager();
         manager.initializeGame();
@@ -38,7 +37,7 @@ class BattleshipManagerTest {
     }
 
     @Test
-    @DisplayName("Init: human starts with 10 guesses")
+    @DisplayName("Init: human starts with 30 guesses")
     void humanStartsWithTenGuesses() {
         assertEquals(30, manager.getHumanDTO().guessesLeft());
     }
@@ -128,7 +127,7 @@ class BattleshipManagerTest {
         for (Cell[] row : grid)
             for (Cell cell : row)
                 if (cell == Cell.SHIP) shipCount++;
-        assertEquals(17, shipCount); // There are 17 total cells that are SHIP for a full Battleship game
+        assertEquals(17, shipCount);
     }
 
     @Test
@@ -153,7 +152,7 @@ class BattleshipManagerTest {
     void setHumanDTOReplacesPreviousDTO() {
         Cell[][] blank = new Cell[10][10];
         for (Cell[] row : blank) java.util.Arrays.fill(row, Cell.WATER);
-        PlayerDTO replacement = new PlayerDTO(blank, null,3, GameStatus.IN_PROGRESS);
+        PlayerDTO replacement = new PlayerDTO(blank, null, 3, GameStatus.IN_PROGRESS, null, null);
 
         manager.setHumanDTO(replacement);
 
@@ -165,23 +164,10 @@ class BattleshipManagerTest {
     void setComputerDTOReplacesPreviousDTO() {
         Cell[][] blank = new Cell[10][10];
         for (Cell[] row : blank) java.util.Arrays.fill(row, Cell.WATER);
-        PlayerDTO replacement = new PlayerDTO(blank, null,0, GameStatus.IN_PROGRESS);
+        PlayerDTO replacement = new PlayerDTO(blank, null, 0, GameStatus.IN_PROGRESS, null, null);
 
         manager.setComputerDTO(replacement);
 
         assertSame(replacement, manager.getComputerDTO());
     }
-
-    // Debug output
-    // This test case is used for the console version
-    //TODO: Depreciate this code, or update for Browser version, commented out for now
-    /*
-    @Test
-    @DisplayName("Debug: constructor prints the ship coordinate to stdout")
-    void constructorPrintsShipLocation() {
-        // The debug line format is "Ship is at: <col-letter><row-number>"
-        String output = out.toString();
-        assertTrue(output.contains("Ship is at: "),
-                "Expected debug ship location line was not printed");
-    } */
 }

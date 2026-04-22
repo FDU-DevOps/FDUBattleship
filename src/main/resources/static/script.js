@@ -1,4 +1,4 @@
-//Size of the board and column labels
+// Size of the board and column labels
 const size = 10;
 const letters = "ABCDEFGHIJ";
 
@@ -6,7 +6,7 @@ const letters = "ABCDEFGHIJ";
  * Tracks whether the game has ended (WIN or LOSS).
  * Used to block further attacks after the game is over.
  */
-let gameOver= false;
+let gameOver = false;
 
 // User Feedback button
 const USER_FEEDBACK_LINK = 'https://docs.google.com/forms/d/e/1FAIpQLSdr2xzx1jbwUW6hDL321aXq4rXhb8n56_qPCpv8hvU4RCcTCA/viewform';
@@ -17,12 +17,12 @@ function handleFeedbackClick() {
 /**
  * Builds a 10x10 board inside the given table element.
  * @param {string} tableId - The ID of the table element to populate.
- * @param {boolean} clickable - If true, each cell fires submitAttack on click (used for the computer's board).
+ * @param {boolean} clickable - If true, each cell fires submitAttack on click.
  */
-
 function loadBoard(tableId, clickable) {
     const table = document.getElementById(tableId);
     table.innerHTML = '';
+
     // Top header row (A-J)
     const headerRow = table.insertRow();
     headerRow.insertCell(); // empty corner
@@ -32,10 +32,10 @@ function loadBoard(tableId, clickable) {
         th.className = "label";
         headerRow.appendChild(th);
     }
+
     for (let i = 0; i < size; i++) {
         const row = table.insertRow();
         const labelCell = document.createElement("th");
-
         labelCell.textContent = String(i + 1);
         labelCell.className = "label";
         row.appendChild(labelCell);
@@ -53,11 +53,11 @@ function loadBoard(tableId, clickable) {
     }
 }
 
-
 /**
  * Sends the player's chosen cell to the backend and updates the UI.
  * Handles both the player's attack result and the computer's counter-move.
  * Ends the game if the backend returns a non-IN_PROGRESS status.
+ *
  * @param {number} row - Zero-based row index of the attacked cell.
  * @param {number} col - Zero-based column index of the attacked cell.
  */
@@ -73,6 +73,8 @@ function loadBoard(tableId, clickable) {
  * @property {string} message
  * @property {string} computerMessage
  * @property {string} gameStatus
+ * @property {number[][]|null} sunkCells        - Coords of the computer ship just sunk, or null
+ * @property {number[][]|null} homeSunkCells     - Coords of the player ship just sunk, or null
  */
 
 async function submitAttack(row, col) {
@@ -92,27 +94,29 @@ async function submitAttack(row, col) {
         return;
     }
 
+    // Update the cell the player just attacked
     updateComputerBoardCell(row, col, data.grid[row][col]);
 
-    /* Repaint the whole human-board and highlight the computer's move */
+    // Repaint the whole human board and highlight the computer's move
     renderHumanBoard(data.homeGrid);
     if (data.computerRow >= 0) {
         highlightLastComputerMove(data.computerRow, data.computerCol);
     }
 
-    document.getElementById("guesses-left").innerText = `Guesses left: ${data.guessesLeft}`;
+    // Apply sunk styling to destroyed ships
+    if (data.sunkCells) {
+        markSunkCells("computer-board", data.sunkCells);
+    }
+    if (data.homeSunkCells) {
+        markSunkCells("human-board", data.homeSunkCells);
+    }
 
-    /* Show both player and computer messages, handle WIN/LOSS */
+    document.getElementById("guesses-left").innerText = `Guesses left: ${data.guessesLeft}`;
     document.getElementById("message").innerText = data.message;
     document.getElementById("computer-message").innerText = data.computerMessage || "";
 
     if (data.gameStatus !== "IN_PROGRESS") {
         gameOver = true;
-        if (data.gameStatus === "WIN") {
-            document.getElementById("message").innerText = "You Won!";
-        } else {
-            document.getElementById("message").innerText = "Computer Wins!";
-        }
     }
 }
 
@@ -120,7 +124,7 @@ async function submitAttack(row, col) {
  * Updates a single cell on the computer's board after an attack.
  * @param {number} row - Zero-based row index.
  * @param {number} col - Zero-based column index.
- * @param {string} newState - Either "hit" or "miss" from the backend response.
+ * @param {string} newState - "hit" or "miss" from the backend.
  */
 function updateComputerBoardCell(row, col, newState) {
     const table = document.getElementById("computer-board");
@@ -138,15 +142,26 @@ function updateComputerBoardCell(row, col, newState) {
  * Repaints the entire human board based on the latest grid state from the backend.
  * @param {string[][]} homeGrid - 2D array of cell states: "hit", "miss", "ship", or "water".
  */
-
 function renderHumanBoard(homeGrid) {
     const table = document.getElementById("human-board");
     for (let r = 0; r < homeGrid.length; r++) {
         for (let c = 0; c < homeGrid[r].length; c++) {
             const cell = table.rows[r + 1].cells[c + 1];
             const state = homeGrid[r][c].toLowerCase();
+            // Preserve sunk class if the cell was already marked sunk
+            const wasSunk = cell.classList.contains("sunk");
             cell.className = state;
-            if (state === "hit")       cell.textContent = "X";
+            if (wasSunk && (state === "hit")) cell.classList.add("sunk");
+
+            if (state === "hit") {
+                // If it was already marked sunk, keep the special character
+                if (wasSunk) {
+                    cell.classList.add("sunk");
+                    cell.textContent = "☠";
+                } else {
+                    cell.textContent = "X";
+                }
+            }
             else if (state === "miss") cell.textContent = "O";
             else if (state === "ship") cell.textContent = "#";
             else                       cell.textContent = "~";
@@ -155,8 +170,47 @@ function renderHumanBoard(homeGrid) {
 }
 
 /**
+ * Applies the "sunk" class to every cell belonging to a just-destroyed ship.
+ * The sunk class adds a black/yellow glow so the entire wreck is visually distinct.
+ *
+ * @param {string} tableId  - "computer-board" or "human-board"
+ * @param {number[][]} cells - Array of [row, col] pairs for the sunk ship's cells
+ */
+function markSunkCells(tableId, cells) {
+    const table = document.getElementById(tableId);
+
+    for (const [r, c] of cells) {
+        const cell = table.rows[r + 1].cells[c + 1];
+        cell.classList.add("sunk");
+        cell.textContent = "☠";
+    }
+
+    cleanSunkBorders(tableId, cells);
+}
+
+function cleanSunkBorders(tableId, cells) {
+    const table = document.getElementById(tableId);
+    const set = new Set(cells.map(([r, c]) => `${r},${c}`));
+    const glow = "3px solid #f1c40f";
+
+    for (const [r, c] of cells) {
+        const cell = table.rows[r + 1].cells[c + 1];
+        const shadows = [];
+
+        // Add an inset shadow only on sides that face outward (no sunk neighbor)
+        if (!set.has(`${r - 1},${c}`)) shadows.push("inset 0  3px 0 0 #f1c40f");  // top
+        if (!set.has(`${r + 1},${c}`)) shadows.push("inset 0 -3px 0 0 #f1c40f");  // bottom
+        if (!set.has(`${r},${c - 1}`)) shadows.push("inset  3px 0 0 0 #f1c40f");  // left
+        if (!set.has(`${r},${c + 1}`)) shadows.push("inset -3px 0 0 0 #f1c40f");  // right
+
+        cell.style.boxShadow = shadows.join(", ");
+    }
+}
+
+/**
  * Highlights the cell the computer attacked last turn with an orange outline.
  * Removes the highlight from the previously marked cell first.
+ *
  * @param {number} row - Zero-based row index of the computer's move.
  * @param {number} col - Zero-based column index of the computer's move.
  */
@@ -169,7 +223,7 @@ function highlightLastComputerMove(row, col) {
 
 async function loadVersion() {
     const response = await fetch("api/version");
-    const version = await response.text(); //https://stackoverflow.com/questions/41946457/getting-text-from-fetch-response-object
+    const version = await response.text();
     document.getElementById("version").innerText = "Version: " + version;
 }
 
@@ -179,11 +233,11 @@ window.onload = async function () {
     const guessesLeft = await response.json();
     document.getElementById("guesses-left").innerText = `Guesses left: ${guessesLeft}`;
 
-    /* Build both boards, computer-board is clickable, human-board is not */
+    // Build both boards; computer-board is clickable, human-board is not
     loadBoard("computer-board", true);
     loadBoard("human-board", false);
 
-    /* Fetch humanStatus so the player's ships show up before the first attack */
+    // Fetch humanStatus so the player's ships show up before the first attack
     const statusResponse = await fetch("api/battleship/humanStatus");
     const humanDTO = await statusResponse.json();
     renderHumanBoard(humanDTO.homeGrid);

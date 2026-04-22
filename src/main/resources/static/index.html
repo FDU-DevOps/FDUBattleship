@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html lang ="en">
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Battleship Board</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -9,27 +11,32 @@
 <h1>BATTLESHIP</h1>
 <p id="version"></p>
 
-<!--BOARDS -->
 <div class="boards-container">
+
     <div class="board-section">
         <h2>Your Board</h2>
-        <table id="human-board"></table>
+        <div class="board-container" id="human-container">
+            <table id="human-board"></table>
+        </div>
         <h2>Computer's Attack</h2>
         <p class="board-message" id="computer-message"></p>
     </div>
+
     <div class="board-section">
         <h2>Computer's Board</h2>
-        <table id="computer-board"></table>
-        <h2>Your attack</h2>
+        <div class="board-container" id="computer-container">
+            <table id="computer-board"></table>
+        </div>
+        <h2>Your Attack</h2>
         <p class="board-message" id="message"></p>
     </div>
+
 </div>
 
-<!--Guesses Left label-->
-<h3 id="guesses-left"></h3>
-
-<!-- Feedback Buton -->
-<button id="userFeedbackButton" onclick="handleFeedbackClick()">Submit Game Feedback</button>
+<div class="game-controls">
+    <h3 id="guesses-left"></h3>
+    <button id="userFeedbackButton" onclick="handleFeedbackClick()">Submit Game Feedback</button>
+</div>
 
 <script src="script.js"></script>
 </body>

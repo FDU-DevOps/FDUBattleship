@@ -49,7 +49,7 @@ public class BoardController {
                     null, null, 0, "NO_GAME",
                     "Start a game first",
                     -1, -1, "",
-                    true
+                    true, null, null
             );
         }
 
@@ -67,11 +67,11 @@ public class BoardController {
                     human.gameStatus().name(),
                     "Invalid coordinates",
                     -1, -1, "",
-                    true
+                    true, null, null
             );
         }
 
-        // Reject already-attacked cell on the tracking grid
+        // Reject already-attacked cell
         Cell[][] trackingGrid = human.grid();
         if (trackingGrid[row][col] == Cell.HIT || trackingGrid[row][col] == Cell.MISS) {
             return new AttackResponseDTO(
@@ -81,7 +81,7 @@ public class BoardController {
                     human.gameStatus().name(),
                     "Cell already attacked",
                     -1, -1, "",
-                    true
+                    true, null, null
             );
         }
 
@@ -95,21 +95,50 @@ public class BoardController {
         manager.setHumanDTO(updatedHuman);
         manager.setComputerDTO(updatedComputer);
 
-        // Build player's hit/miss message
-        String playerMessage =
-                updatedHuman.grid()[row][col] == Cell.HIT ? "Hit!" : "Miss!";
+        // ----------------------------------------------------------------
+        // Build player's attack message
+        // ----------------------------------------------------------------
+        String playerMessage;
+        Ship playerSunkShip = processor.getLastSunkShip();
 
-        // Build computer's move message (empty string if game ended before computer moved)
+        if (updatedHuman.gameStatus() == GameStatus.WIN) {
+            playerMessage = "You win!";
+        } else if (playerSunkShip != null) {
+            playerMessage = playerSunkShip.size() + "-cell ship sunk!";
+        } else if (updatedHuman.grid()[row][col] == Cell.HIT) {
+            playerMessage = "Hit!";
+        } else {
+            playerMessage = "Miss!";
+        }
+
+        // ----------------------------------------------------------------
+        // Build computer's attack message
+        // ----------------------------------------------------------------
         int compRow = processor.getLastComputerRow();
         int compCol = processor.getLastComputerCol();
         String computerMessage = "";
+        Ship homeSunkShip = processor.getLastHomeSunkShip();
+
         if (compRow >= 0) {
-            boolean compHit = updatedHuman.homeGrid()[compRow][compCol] == Cell.HIT;
             String coord = (char)('A' + compCol) + String.valueOf(compRow + 1);
-            computerMessage = compHit
-                    ? "Computer hit your ship at " + coord + "!"
-                    : "Computer missed at " + coord + ".";
+            boolean compHit = updatedHuman.homeGrid()[compRow][compCol] == Cell.HIT;
+
+            if (updatedHuman.gameStatus() == GameStatus.LOSS) {
+                computerMessage = "Computer sunk your last ship. You lose!";
+            } else if (homeSunkShip != null) {
+                computerMessage = "Computer sunk your " + homeSunkShip.size() + "-cell ship at " + coord + "!";
+            } else if (compHit) {
+                computerMessage = "Computer hit your ship at " + coord + "!";
+            } else {
+                computerMessage = "Computer missed at " + coord + ".";
+            }
         }
+
+        // ----------------------------------------------------------------
+        // Convert sunk ship cells to int[][] for the frontend
+        // ----------------------------------------------------------------
+        int[][] sunkCells = shipToCoords(playerSunkShip);
+        int[][] homeSunkCells = shipToCoords(homeSunkShip);
 
         return new AttackResponseDTO(
                 convertGrid(updatedHuman.grid()),
@@ -120,8 +149,18 @@ public class BoardController {
                 compRow,
                 compCol,
                 computerMessage,
-                false
+                false,
+                sunkCells,
+                homeSunkCells
         );
+    }
+
+    /** Converts a Ship's cell list to a plain int[][], or null if ship is null. */
+    private int[][] shipToCoords(Ship ship) {
+        if (ship == null) return null;
+        return ship.cells().stream()
+                .map(cell -> new int[]{ cell[0], cell[1] })
+                .toArray(int[][]::new);
     }
 
     private String[][] convertGrid(Cell[][] grid) {
