@@ -278,6 +278,60 @@ class BoardControllerRestTest {
         assertThat(response.computerRow()).isEqualTo(-1);
         assertThat(response.computerCol()).isEqualTo(-1);
     }
+    @Test
+    @DisplayName("Placement start - human home grid is blank")
+    void testPlacementStart() {
+        userA.post().uri("/api/battleship/placement-start").exchange();
+        PlayerDTO humanStatus = getHumanStatus(userA);
+
+        // Every cell on the home grid should be WATER before player places anything
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 10; j++) {
+                assertEquals(Cell.WATER, humanStatus.homeGrid()[i][j]);
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("Place a valid ship - 5 cell horizontal ship at 0,0")
+    void testPlaceValidShip() {
+        userA.post().uri("/api/battleship/placement-start").exchange();
+
+        PlaceShipRequestDTO request = new PlaceShipRequestDTO(0, 0, 5, true);
+        AttackResponseDTO response = userA.post()
+                .uri("/api/battleship/place-ship")
+                .body(request)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(AttackResponseDTO.class)
+                .returnResult()
+                .getResponseBody();
+
+        assertThat(response.isError()).isFalse();
+        assertThat(response.message()).containsIgnoringCase("ship placed");
+        assertThat(response.homeGrid()[0][0]).isEqualTo("ship");
+        assertThat(response.homeGrid()[0][4]).isEqualTo("ship");
+    }
+
+    @Test
+    @DisplayName("Place an invalid ship - out of bounds")
+    void testPlaceInvalidShip() {
+        userA.post().uri("/api/battleship/placement-start").exchange();
+
+        // 5 cell ship starting at col 8 horizontally goes out of bounds
+        PlaceShipRequestDTO request = new PlaceShipRequestDTO(0, 8, 5, true);
+        AttackResponseDTO response = userA.post()
+                .uri("/api/battleship/place-ship")
+                .body(request)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(AttackResponseDTO.class)
+                .returnResult()
+                .getResponseBody();
+
+        assertThat(response.isError()).isTrue();
+        assertThat(response.message()).containsIgnoringCase("invalid placement");
+    }
 
     // ----------------------   HELPER FUNCTIONS          --------------------------------
     // helper function for setting up the clients -
