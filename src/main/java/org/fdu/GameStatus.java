@@ -10,6 +10,7 @@ package org.fdu;
  */
 
 public enum GameStatus {
+   PLACEMENT,
     IN_PROGRESS,
     WIN,
     LOSS

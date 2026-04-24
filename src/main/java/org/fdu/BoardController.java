@@ -10,10 +10,73 @@ public class BoardController {
     // each start game generates a new object (v. generating a single object
     @PostMapping("/start-game")
     public int startGame(HttpSession session) {
-        BattleshipManager manager = new BattleshipManager();
-        manager.initializeGame();
-        session.setAttribute("game", manager);
+        BattleshipManager manager = (BattleshipManager) session.getAttribute("game");
+
+        // If no placement session exists, fall back to a full random game
+        if (manager == null) {
+            manager = new BattleshipManager();
+            manager.initializeGame();
+            session.setAttribute("game", manager);
+        }
+
         return manager.getHumanDTO().guessesLeft();
+    }
+
+    /**
+     * Initializes the placement phase for a new game session.
+     * Sets up computer ships and a blank player home grid.
+     * Stores the manager in the session.
+     *
+     * @param session the HTTP session for this player
+     * @return the blank player home grid as lowercase strings for the frontend to render
+     */
+    @PostMapping("/placement-start")
+    public String[][] placementStart(HttpSession session) {
+        BattleshipManager manager = new BattleshipManager();
+        manager.initializePlacementPhase();
+        session.setAttribute("game", manager);
+        return convertGrid(manager.getHumanDTO().homeGrid());
+    }
+    /**
+     * Receives a single ship placement from the player and validates it.
+     * Delegates to placePlayerShip() in BattleshipManager.
+     *
+     * @param request PlaceShipRequestDTO with row, col, shipLength, horizontal
+     * @param session the HTTP session holding the BattleshipManager
+     * @return AttackResponseDTO with updated home grid, success flag, and placement status
+     */
+    @PostMapping("/place-ship")
+    public AttackResponseDTO placeShip(@RequestBody PlaceShipRequestDTO request,
+                                       HttpSession session) {
+        BattleshipManager manager = (BattleshipManager) session.getAttribute("game");
+
+        if (manager == null) {
+            return new AttackResponseDTO(
+                    null, null, 0, "NO_GAME",
+                    "Start a game first",
+                    -1, -1, "",
+                    true, null, null
+            );
+        }
+
+        boolean success = manager.placePlayerShip(
+                request.row(), request.col(),
+                request.shipLength(), request.horizontal()
+        );
+
+        String[][] updatedGrid = convertGrid(manager.getHumanDTO().homeGrid());
+        boolean allPlaced = manager.isPlacementComplete();
+
+        return new AttackResponseDTO(
+                null,
+                updatedGrid,
+                0,
+                allPlaced ? GameStatus.IN_PROGRESS.name() : GameStatus.PLACEMENT.name(),
+                success ? "Ship placed" : "Invalid placement",
+                -1, -1, "",
+                !success,
+                null, null
+        );
     }
 
     /**

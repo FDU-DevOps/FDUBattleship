@@ -7,6 +7,12 @@ const letters = "ABCDEFGHIJ";
  * Used to block further attacks after the game is over.
  */
 let gameOver = false;
+// Placement phase state
+const FLEET = [5, 4, 3, 3, 2];
+const FLEET_NAMES = ["Carrier", "Battleship", "Submarine", "Submarine", "Patrol Boat"];
+let placementIndex = 0;
+let placementHorizontal = true;
+let placementComplete = false;
 
 // User Feedback button
 const USER_FEEDBACK_LINK = 'https://docs.google.com/forms/d/e/1FAIpQLSdr2xzx1jbwUW6hDL321aXq4rXhb8n56_qPCpv8hvU4RCcTCA/viewform';
@@ -226,20 +232,94 @@ async function loadVersion() {
     const version = await response.text();
     document.getElementById("version").innerText = "Version: " + version;
 }
+/**
+ * Toggles ship orientation between horizontal and vertical.
+ * Updates the button label to reflect the current selection.
+ */
+function toggleOrientation() {
+    placementHorizontal = !placementHorizontal;
+    document.getElementById("toggleOrientation").textContent =
+        placementHorizontal ? "Orientation: Horizontal" : "Orientation: Vertical";
+}
 
-// On page load: start a new game, build both boards, and show the player's ships
-window.onload = async function () {
+/**
+ * Called when the player clicks a cell on the human board during placement phase.
+ * Sends the placement to the backend, re-renders the board on success.
+ * Advances to the next ship or enables Start Game when all ships are placed.
+ *
+ * @param {number} row - Zero-based row index of the clicked cell.
+ * @param {number} col - Zero-based column index of the clicked cell.
+ */
+async function placeShipAtCell(row, col) {
+    if (placementComplete) return;
+
+    const response = await fetch("api/battleship/place-ship", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            row: row,
+            col: col,
+            shipLength: FLEET[placementIndex],
+            horizontal: placementHorizontal
+        })
+    });
+
+    const data = await response.json();
+
+    if (data.isError) {
+        document.getElementById("computer-message").innerText = "Invalid placement — try again.";
+        return;
+    }
+
+    // Re-render the home board with the newly placed ship
+    renderHumanBoard(data.homeGrid);
+    document.getElementById("computer-message").innerText = "";
+    placementIndex++;
+
+    if (data.gameStatus === "IN_PROGRESS") {
+        // All ships placed — enable Start Game button
+        placementComplete = true;
+        document.getElementById("placement-label").innerText = "All ships placed! Press Start Game.";
+        document.getElementById("confirmPlacement").disabled = false;
+    } else {
+        // Update label to show next ship
+        document.getElementById("placement-label").innerText =
+            `Place your ${FLEET_NAMES[placementIndex]} (${FLEET[placementIndex]} cells)`;
+    }
+}
+
+/**
+ * Called when the player clicks Start Game after all ships are placed.
+ * Calls /start-game, hides placement UI, makes computer board clickable.
+ */
+async function confirmPlacement() {
     const response = await fetch("api/battleship/start-game", { method: "POST" });
     const guessesLeft = await response.json();
+
     document.getElementById("guesses-left").innerText = `Guesses left: ${guessesLeft}`;
+    document.getElementById("placement-ui").style.display = "none";
 
-    // Build both boards; computer-board is clickable, human-board is not
+    // Make computer board clickable for attacks
     loadBoard("computer-board", true);
-    loadBoard("human-board", false);
+}
+// On page load: start a new game, build both boards, and show the player's ships
+window.onload = async function () {
+    // Call placement-start instead of start-game
+    await fetch("api/battleship/placement-start", { method: "POST" });
 
-    // Fetch humanStatus so the player's ships show up before the first attack
-    const statusResponse = await fetch("api/battleship/humanStatus");
-    const humanDTO = await statusResponse.json();
-    renderHumanBoard(humanDTO.homeGrid);
+    // Build both boards — human-board clickable for placement, computer-board not yet
+    loadBoard("human-board", false);
+    loadBoard("computer-board", false);
+
+    // Set human board cells clickable for ship placement
+    const humanTable = document.getElementById("human-board");
+    for (let i = 0; i < size; i++) {
+        for (let j = 0; j < size; j++) {
+            humanTable.rows[i + 1].cells[j + 1].onclick = function () {
+                placeShipAtCell(i, j).catch(console.error);
+            };
+        }
+    }
+
     await loadVersion();
 };

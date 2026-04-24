@@ -75,7 +75,90 @@ public class BattleshipManager {
         humanDTO = new PlayerDTO(trackingGrid, homeGrid, MAX_GUESSES,
                 GameStatus.IN_PROGRESS, new ArrayList<>(), homeShips);
     }
+    /**
+     * Phase 1 of game initialization — sets up computer ships and blank player grids.
+     * Called at session start before the player places their ships.
+     * The game is not yet attackable after this call.
+     */
+    public void initializePlacementPhase() {
+        battleBoard     = new BattleBoard();
+        attackProcessor = new AttackProcessor();
 
+        int[] shipLengths = {5, 4, 3, 3, 2};
+
+        // --- Computer's ship grid ---
+        Cell[][] shipGrid = blankGrid();
+        List<Ship> computerShips = new ArrayList<>();
+        for (int len : shipLengths) computerShips.add(placeShip(shipGrid, len));
+        computerDTO = new PlayerDTO(shipGrid, null, 0, GameStatus.IN_PROGRESS, computerShips, null);
+
+        // --- Human's home grid (blank, awaiting player placement) ---
+        Cell[][] homeGrid = blankGrid();
+
+        // --- Human's tracking grid (blank) ---
+        Cell[][] trackingGrid = blankGrid();
+
+        humanDTO = new PlayerDTO(trackingGrid, homeGrid, MAX_GUESSES,
+                GameStatus.PLACEMENT, new ArrayList<>(), new ArrayList<>());
+    }
+
+    /**
+     * Attempts to place a single player ship on the human home grid.
+     * Called once per ship during the placement phase.
+     *
+     * @param row        Start row of the ship (0-9)
+     * @param col        Start column of the ship (0-9)
+     * @param shipLength Length of the ship being placed
+     * @param horizontal true = horizontal, false = vertical
+     * @return true if placed successfully, false if out of bounds or overlapping
+     */
+    public boolean placePlayerShip(int row, int col, int shipLength, boolean horizontal) {
+        Cell[][] homeGrid = humanDTO.homeGrid();
+
+        // --- Bounds check ---
+        boolean fits = horizontal
+                ? (col + shipLength <= SIZE)
+                : (row + shipLength <= SIZE);
+        if (!fits) return false;
+
+        // --- Overlap check ---
+        for (int i = 0; i < shipLength; i++) {
+            int r = horizontal ? row : row + i;
+            int c = horizontal ? col + i : col;
+            if (homeGrid[r][c] != Cell.WATER) return false;
+        }
+
+        // --- Place ship ---
+        List<int[]> cells = new ArrayList<>();
+        for (int i = 0; i < shipLength; i++) {
+            int r = horizontal ? row : row + i;
+            int c = horizontal ? col + i : col;
+            homeGrid[r][c] = Cell.SHIP;
+            cells.add(new int[]{ r, c });
+        }
+
+        // Add the new ship to the human's home ship list
+        List<Ship> homeShips = new ArrayList<>(humanDTO.homeShips());
+        homeShips.add(new Ship(cells));
+        humanDTO = new PlayerDTO(humanDTO.grid(), homeGrid, humanDTO.guessesLeft(),
+                GameStatus.PLACEMENT, humanDTO.ships(), homeShips);
+
+        return true;
+    }
+
+    /**
+     * Checks whether the player has finished placing all ships.
+     * Counts SHIP cells on the human home grid.
+     *
+     * @return true if total SHIP cells == 17 (5+4+3+3+2), false otherwise
+     */
+    public boolean isPlacementComplete() {
+        int shipCells = 0;
+        for (Cell[] row : humanDTO.homeGrid())
+            for (Cell c : row)
+                if (c == Cell.SHIP) shipCells++;
+        return shipCells == 17;
+    }
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
