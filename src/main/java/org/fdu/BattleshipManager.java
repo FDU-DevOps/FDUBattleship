@@ -1,5 +1,8 @@
 package org.fdu;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,6 +20,8 @@ import java.util.concurrent.ThreadLocalRandom;
  * </p>
  */
 public class BattleshipManager implements Serializable {
+
+    private static final Logger log = LoggerFactory.getLogger(BattleshipManager.class);
 
     // Fixed board dimension, both axes are 10x10 throughout the entire game
     private static final int SIZE = 10;
@@ -68,6 +73,7 @@ public class BattleshipManager implements Serializable {
         this.computerDTO = result.updatedComputer();
         return result;
     }
+
     /**
      * Constructs and initializes all game components for a new session. This skips manual placement
      * <p>
@@ -91,6 +97,7 @@ public class BattleshipManager implements Serializable {
         humanDTO = new PlayerDTO(humanDTO.grid(), homeGrid, MAX_GUESSES,
                 GameStatus.IN_PROGRESS, new ArrayList<>(), homeShips);
     }
+
     /**
      * Phase 1 of game initialization — sets up computer ships and blank player grids so manual placement can begin.
      * <p>
@@ -147,7 +154,7 @@ public class BattleshipManager implements Serializable {
             int r = horizontal ? row : row + i;
             int c = horizontal ? col + i : col;
             homeGrid[r][c] = Cell.SHIP;
-            cells.add(new int[]{ r, c });
+            cells.add(new int[]{r, c});
         }
 
         // Add the new ship to the human's home ship list
@@ -171,6 +178,7 @@ public class BattleshipManager implements Serializable {
                 if (c == Cell.SHIP) shipCells++;
         return shipCells == TOTAL_SHIP_CELLS;
     }
+
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
@@ -210,7 +218,7 @@ public class BattleshipManager implements Serializable {
                 for (int len : BattleshipManager.FLEET_LENGTHS) allShips.add(placeShip(grid, len));
                 return allShips; //(Returns once all ships placed successfully)
             } catch (RuntimeException e) {
-                System.out.println("Impossible to place all ships, trying again...");
+                log.trace("Impossible to place all ships, trying again...");
             }
         }
     }
@@ -222,8 +230,6 @@ public class BattleshipManager implements Serializable {
      * @param grid      the grid to place on
      * @param shipLength number of cells the ship occupies
      * @return Ship record with coordinates of every placed cell
-     *
-     *
      */
     private Ship placeShip(Cell[][] grid, int shipLength) {
         int attemptCounter = 0;
@@ -243,7 +249,10 @@ public class BattleshipManager implements Serializable {
             for (int i = 0; i < shipLength; i++) {
                 int r = horizontal ? row : row + i;
                 int c = horizontal ? col + i : col;
-                if (grid[r][c] != Cell.WATER) { canPlace = false; break; }
+                if (grid[r][c] != Cell.WATER) {
+                    canPlace = false;
+                    break;
+                }
             }
 
             if (!canPlace) continue;
@@ -253,12 +262,13 @@ public class BattleshipManager implements Serializable {
                 int r = horizontal ? row : row + i;
                 int c = horizontal ? col + i : col;
                 grid[r][c] = Cell.SHIP;
-                cells.add(new int[]{ r, c });
-                System.out.println("Placing ship cell at: " + (char)(COLUMN_LABEL_START + c) + (r + ROW_LABEL_OFFSET));
+                cells.add(new int[]{r, c});
+                log.trace("Placing ship cell at: {}{}", (char) (COLUMN_LABEL_START + c), (r + ROW_LABEL_OFFSET));
             }
-            System.out.println("--- Ship of length " + shipLength + " placed ---");
+            log.trace("Ship of length {} placed", shipLength);
             return new Ship(cells);
         }
+
         // tried ATTEMPTS times and failed
         throw new RuntimeException("Could not place ship of length " + shipLength);
     }
@@ -270,7 +280,7 @@ public class BattleshipManager implements Serializable {
     /** Fills every cell of the DTO's primary grid with WATER. */
     void clearGrid(PlayerDTO dto) {
         for (Cell[] row : dto.grid()) Arrays.fill(row, Cell.WATER);
-        System.out.println("--- board cleared of all ships ---");
+        log.trace("Board cleared of all ships");
     }
 
     /**
@@ -282,9 +292,9 @@ public class BattleshipManager implements Serializable {
             int r = isHorizontal ? startRow : startRow + i;
             int c = isHorizontal ? startCol + i : startCol;
             dto.grid()[r][c] = Cell.SHIP;
-            System.out.println("Placing ship cell at: " + (char)(COLUMN_LABEL_START + c) + (r + ROW_LABEL_OFFSET));
+            log.trace("Placing ship cell at: {}{}", (char) (COLUMN_LABEL_START + c), (r + ROW_LABEL_OFFSET));
         }
-        System.out.println("--- Ship of length " + shipLength + " placed ---");
+        log.trace("Ship of length {} placed", shipLength);
     }
 
     // -------------------------------------------------------------------------

@@ -103,10 +103,12 @@ class AttackProcessorTest {
     @Test
     @DisplayName("MISS: status stays IN_PROGRESS when human ships still remain")
     void missKeepsInProgressWhenShipsRemain() {
+        homeGrid[7][7] = Cell.SHIP;
+        homeGrid[9][9] = Cell.SHIP; // extra ship so computer can't win in one move
+
         TurnResultDTO result = processor.processAttack(0, 0, human(3), computer());
         assertEquals(GameStatus.IN_PROGRESS, result.updatedHuman().gameStatus());
     }
-
     @Test
     @DisplayName("MISS: computer fires and coordinates are recorded in TurnResult")
     void missRecordsComputerMoveCoordinates() {
@@ -118,13 +120,21 @@ class AttackProcessorTest {
     @Test
     @DisplayName("LOSS: status is LOSS when computer sinks the last human ship")
     void computerSinksLastShipSetsLoss() {
-        for (int r = 0; r < 10; r++)
-            for (int c = 0; c < 10; c++)
-                if (r != 5 || c != 5) homeGrid[r][c] = Cell.MISS;
+        // make exactly one unattacked cell, and make it a ship
+        for (int r = 0; r < 10; r++) {
+            for (int c = 0; c < 10; c++) {
+                homeGrid[r][c] = Cell.MISS;
+            }
+        }
+        homeGrid[5][5] = Cell.SHIP; // only possible target
 
         TurnResultDTO result = processor.processAttack(0, 0, human(5), computer());
+
+        assertEquals(5, result.computerRow());
+        assertEquals(5, result.computerCol());
         assertEquals(GameStatus.LOSS, result.updatedHuman().gameStatus());
     }
+
 
     @Test
     @DisplayName("LOSS: computer does not fire if player wins on their turn")

@@ -1,5 +1,8 @@
 package org.fdu;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +24,9 @@ import java.util.concurrent.ThreadLocalRandom;
  * </p>
  */
 public class AttackProcessor implements Serializable {
+
+    private static final Logger log = LoggerFactory.getLogger(AttackProcessor.class);
+
     /**
      * Processes a single attack from the player against the computer's board,
      * then fires the computer's random counter-attack against the human's home grid.
@@ -39,6 +45,8 @@ public class AttackProcessor implements Serializable {
      *         and the computer's move coordinates
      */
     public TurnResultDTO processAttack(int row, int col, PlayerDTO humanDTO, PlayerDTO computerDTO) {
+        log.debug("Processing turn. Player attacks row={}, col={}", row, col);
+
         // Deep-copy all grids so incoming DTOs remain immutable
         Cell[][] newShipGrid = copyGrid(computerDTO.grid());
         Cell[][] newTrackingGrid = copyGrid(humanDTO.grid());
@@ -54,19 +62,27 @@ public class AttackProcessor implements Serializable {
             newShipGrid[row][col] = Cell.HIT;
             newTrackingGrid[row][col] = Cell.HIT;
             sunkShip = findSunkShip(computerDTO.ships(), newShipGrid, row, col);
+            log.debug("Player HIT at ({}, {})", row, col);
+            if (sunkShip != null) {
+                log.info("Player sunk computer ship of size {}", sunkShip.size());
+            }
         } else {
             newShipGrid[row][col] = Cell.MISS;
             newTrackingGrid[row][col] = Cell.MISS;
+            log.debug("Player MISS at ({}, {})", row, col);
         }
 
         int guessesLeft = (target == Cell.SHIP)
                 ? humanDTO.guessesLeft()
                 : humanDTO.guessesLeft() - 1;
 
+        log.debug("Guesses left after player's move: {}", guessesLeft);
+
         // ----------------------------------------------------------------
         // Check if the player just won or ran out of guesses
         // ----------------------------------------------------------------
         if (allShipsSunk(newShipGrid)) {
+            log.info("Player wins! All computer ships sunk.");
             PlayerDTO updatedHuman = new PlayerDTO(newTrackingGrid, newHomeGrid, guessesLeft,
                     GameStatus.WIN, humanDTO.ships(), humanDTO.homeShips());
             PlayerDTO updatedComputer = new PlayerDTO(newShipGrid, null, 0,
@@ -75,6 +91,7 @@ public class AttackProcessor implements Serializable {
         }
 
         if (guessesLeft <= 0) {
+            log.info("Computer wins! Player ran out of guesses.");
             PlayerDTO updatedHuman = new PlayerDTO(newTrackingGrid, newHomeGrid, 0,
                     GameStatus.LOSS, humanDTO.ships(), humanDTO.homeShips());
             PlayerDTO updatedComputer = new PlayerDTO(newShipGrid, null, 0,
@@ -95,8 +112,13 @@ public class AttackProcessor implements Serializable {
         if (homeTarget == Cell.SHIP) {
             newHomeGrid[computerRow][computerCol] = Cell.HIT;
             homeSunkShip = findSunkShip(humanDTO.homeShips(), newHomeGrid, computerRow, computerCol);
+            log.debug("Computer HIT at ({}, {})", computerRow, computerCol);
+            if (homeSunkShip != null) {
+                log.info("Computer sunk player ship of size {}", homeSunkShip.size());
+            }
         } else {
             newHomeGrid[computerRow][computerCol] = Cell.MISS;
+            log.debug("Computer MISS at ({}, {})", computerRow, computerCol);
         }
 
         // ----------------------------------------------------------------
@@ -104,6 +126,11 @@ public class AttackProcessor implements Serializable {
         // ----------------------------------------------------------------
         boolean computerWon = allShipsSunk(newHomeGrid);
         GameStatus humanStatus = computerWon ? GameStatus.LOSS : GameStatus.IN_PROGRESS;
+
+        if (computerWon) {
+            log.info("Computer wins! All player ships sunk.");
+        }
+
         PlayerDTO updatedHuman = new PlayerDTO(newTrackingGrid, newHomeGrid, guessesLeft,
                 humanStatus, humanDTO.ships(), humanDTO.homeShips());
         PlayerDTO updatedComputer = new PlayerDTO(newShipGrid, null, 0,
@@ -167,7 +194,7 @@ public class AttackProcessor implements Serializable {
         for (int r = 0; r < grid.length; r++)
             for (int c = 0; c < grid[r].length; c++)
                 if (grid[r][c] != Cell.HIT && grid[r][c] != Cell.MISS)
-                    available.add(new int[]{ r, c });
+                    available.add(new int[]{r, c});
         return available.get(ThreadLocalRandom.current().nextInt(available.size()));
     }
 }

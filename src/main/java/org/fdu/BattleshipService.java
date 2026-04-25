@@ -1,98 +1,54 @@
 package org.fdu;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
  * Stateless Spring service that orchestrates all Battleship game logic.
- * <p>
- * This is the single point of coordination between {@link BoardController}
- * and the domain layer ({@link BattleshipManager}, {@link AttackProcessor}).
- * The controller's only jobs are reading the session and returning HTTP
- * responses. Everything else lives here.
- * </p>
- * <p>
- * Responsibilities:
- * <ul>
- *   <li>Validating attack coordinates and duplicate-attack checks</li>
- *   <li>Delegating attack resolution to {@link AttackProcessor}</li>
- *   <li>Building human-readable messages for both the player's and
- *       the computer's moves</li>
- *   <li>Converting internal {@link Cell} grids to the lowercase strings
- *       the frontend expects</li>
- *   <li>Converting {@link Ship} cell lists to {@code int[][]} for
- *       sunk-ship highlighting</li>
- *   <li>Delegating placement calls to {@link BattleshipManager}</li>
- * </ul>
- * </p>
- * <p>
- * This class is a Spring singleton and holds no mutable state of its own.
- * All game state lives in the session-scoped {@link BattleshipManager}.
- * </p>
  */
 @Service
 public class BattleshipService {
+
+    private static final Logger log = LoggerFactory.getLogger(BattleshipService.class);
 
     private static final int NO_COORD = -1;
     private static final int MIN_INDEX = 0;
     private static final char COLUMN_LABEL_START = 'A';
     private static final int ROW_LABEL_OFFSET = 1;
     private static final String STATUS_NO_GAME = "NO_GAME";
-    // -------------------------------------------------------------------------
-    // Game lifecycle
-    // -------------------------------------------------------------------------
 
-    /**
-     * Initializes a full random game (no manual placement) and returns
-     * the number of guesses the player starts with.
-     *
-     * @param manager the session-scoped game manager to initialize
-     * @return starting guess count
-     */
     public int startGame(BattleshipManager manager) {
+        log.debug("startGame called");
         if (manager.getHumanDTO() == null || !manager.isPlacementComplete()) {
-            manager.initializeGame();  // fresh random game
+            log.debug("Initializing random game");
+            manager.initializeGame();
         } else {
-            // Player placed ships manually
+            log.debug("Using manually placed ships, switching status to IN_PROGRESS");
             PlayerDTO human = manager.getHumanDTO();
             manager.setHumanDTO(new PlayerDTO(
                     human.grid(), human.homeGrid(), BattleshipManager.getMaxGuesses(),
                     GameStatus.IN_PROGRESS, human.ships(), human.homeShips()
             ));
         }
+        log.info("Game started with {} guesses", manager.getHumanDTO().guessesLeft());
         return manager.getHumanDTO().guessesLeft();
     }
 
-    /**
-     * Initializes the placement phase and returns the blank home grid
-     * as lowercase strings for the frontend to render.
-     *
-     * @param manager the session-scoped game manager to initialize
-     * @return blank player home grid as lowercase strings
-     */
     public String[][] startPlacement(BattleshipManager manager) {
+        log.debug("startPlacement called");
         manager.initializePlacementPhase();
         return convertGrid(manager.getHumanDTO().homeGrid());
     }
 
-    // -------------------------------------------------------------------------
-    // Placement
-    // -------------------------------------------------------------------------
-
-    /**
-     * Attempts to place a single player ship and returns the updated response.
-     * <p>
-     * Returns an error response if the manager is null (no active session).
-     * Returns a failed-placement response if the coordinates or length are invalid.
-     * </p>
-     *
-     * @param request the placement parameters from the frontend
-     * @param manager the session-scoped game manager, or {@code null} if no session exists
-     * @return {@link AttackResponseDTO} with the updated home grid and placement status
-     */
     public AttackResponseDTO placeShip(PlaceShipRequestDTO request, BattleshipManager manager) {
         if (manager == null) {
+            log.warn("placeShip called without active session");
             return errorResponse("Start a game first");
         }
+
+        log.debug("placeShip request: row={}, col={}, length={}, horizontal={}",
+                request.row(), request.col(), request.shipLength(), request.horizontal());
 
         boolean success = manager.placePlayerShip(
                 request.row(), request.col(),
@@ -104,45 +60,35 @@ public class BattleshipService {
         String status = allPlaced ? GameStatus.IN_PROGRESS.name() : GameStatus.PLACEMENT.name();
         String message = success ? "Ship placed" : "Invalid placement";
 
+        if (success) {
+            log.debug("Ship placed successfully");
+        } else {
+            log.debug("Invalid ship placement");
+        }
+        if (allPlaced) {
+            log.info("All player ships placed. Game ready.");
+        }
+
         return new AttackResponseDTO(
                 null, updatedGrid, 0, status, message,
                 NO_COORD, NO_COORD, "", !success, null, null
         );
     }
 
-    // -------------------------------------------------------------------------
-    // Attack
-    // -------------------------------------------------------------------------
-
-    /**
-     * Validates the player's attack, processes the full turn, updates the
-     * manager, and returns a complete response for the frontend.
-     * <p>
-     * Validation order:
-     * <ol>
-     *   <li>No active session</li>
-     *   <li>Coordinates out of bounds</li>
-     *   <li>Cell already attacked</li>
-     * </ol>
-     * On success, delegates to {@link AttackProcessor#processAttack}, updates
-     * both DTOs on the manager, builds both player and computer messages,
-     * and assembles the response.
-     * </p>
-     *
-     * @param request the attack coordinates from the frontend
-     * @param manager the session-scoped game manager, or {@code null} if no session exists
-     * @return {@link AttackResponseDTO} with both updated grids, messages, and game status
-     */
     public AttackResponseDTO processAttack(AttackRequestDTO request, BattleshipManager manager) {
         if (manager == null) {
+            log.warn("processAttack called without active session");
             return errorResponse("Start a game first");
         }
 
         int row = request.row();
         int col = request.column();
-        PlayerDTO human    = manager.getHumanDTO();
-        // Reject out-of-bounds
+        PlayerDTO human = manager.getHumanDTO();
+
+        log.debug("processAttack request: row={}, col={}", row, col);
+
         if (row < MIN_INDEX || row >= BattleshipManager.getBoardSize() || col < MIN_INDEX || col >= BattleshipManager.getBoardSize()) {
+            log.debug("Rejected attack: invalid coordinates row={}, col={}", row, col);
             return new AttackResponseDTO(
                     null, null,
                     human.guessesLeft(), human.gameStatus().name(),
@@ -151,9 +97,9 @@ public class BattleshipService {
             );
         }
 
-        // Reject already-attacked cell
         Cell[][] trackingGrid = human.grid();
         if (trackingGrid[row][col] == Cell.HIT || trackingGrid[row][col] == Cell.MISS) {
+            log.debug("Rejected attack: cell already attacked row={}, col={}", row, col);
             return new AttackResponseDTO(
                     convertGrid(trackingGrid),
                     convertGrid(human.homeGrid()),
@@ -164,12 +110,21 @@ public class BattleshipService {
             );
         }
 
-        // Process the full turn with the manager using a per-attack processor. Less State, and updates DTOs
         AttackProcessor processor = new AttackProcessor();
         TurnResultDTO turn = manager.performTurn(row, col, processor);
 
-        String playerMessage  = buildPlayerMessage(turn, row, col);
+        String playerMessage = buildPlayerMessage(turn, row, col);
         String computerMessage = buildComputerMessage(turn);
+
+        log.debug("Turn completed. guessesLeft={}, status={}",
+                turn.updatedHuman().guessesLeft(),
+                turn.updatedHuman().gameStatus());
+
+        if (turn.updatedHuman().gameStatus() == GameStatus.WIN) {
+            log.info("Game ended: player WIN");
+        } else if (turn.updatedHuman().gameStatus() == GameStatus.LOSS) {
+            log.info("Game ended: player LOSS");
+        }
 
         return new AttackResponseDTO(
                 convertGrid(turn.updatedHuman().grid()),
@@ -186,13 +141,6 @@ public class BattleshipService {
         );
     }
 
-    // -------------------------------------------------------------------------
-    // Message builders
-    // -------------------------------------------------------------------------
-
-    /**
-     * Builds the human-readable message describing the player's attack result.
-     */
     private String buildPlayerMessage(TurnResultDTO turn, int row, int col) {
         if (turn.updatedHuman().gameStatus() == GameStatus.WIN) {
             return "You win!";
@@ -206,10 +154,6 @@ public class BattleshipService {
         return "Miss!";
     }
 
-    /**
-     * Builds the human-readable message describing the computer's attack result.
-     * Returns an empty string if the computer did not fire (player won first).
-     */
     private String buildComputerMessage(TurnResultDTO turn) {
         int compRow = turn.computerRow();
         int compCol = turn.computerCol();
@@ -233,14 +177,6 @@ public class BattleshipService {
         return "Computer missed at " + coord + ".";
     }
 
-    // -------------------------------------------------------------------------
-    // Grid / ship conversion utilities
-    // -------------------------------------------------------------------------
-
-    /**
-     * Converts a 2D {@link Cell} array to lowercase strings for the frontend.
-     * Values: "water", "ship", "hit", "miss".
-     */
     public String[][] convertGrid(Cell[][] grid) {
         String[][] result = new String[grid.length][grid[0].length];
         for (int i = 0; i < grid.length; i++)
@@ -249,20 +185,13 @@ public class BattleshipService {
         return result;
     }
 
-    /**
-     * Converts a {@link Ship}'s cell list to a plain {@code int[][]},
-     * or {@code null} if the ship is {@code null}.
-     */
     private int[][] shipToCoords(Ship ship) {
         if (ship == null) return null;
         return ship.cells().stream()
-                .map(cell -> new int[]{ cell[0], cell[1] })
+                .map(cell -> new int[]{cell[0], cell[1]})
                 .toArray(int[][]::new);
     }
 
-    /**
-     * Builds a generic error response with no grid state.
-     */
     private AttackResponseDTO errorResponse(String message) {
         return new AttackResponseDTO(
                 null, null, 0, STATUS_NO_GAME, message,
