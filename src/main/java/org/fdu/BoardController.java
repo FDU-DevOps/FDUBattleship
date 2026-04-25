@@ -63,6 +63,7 @@ public class BoardController {
     @PostMapping("/place-ship")
     public AttackResponseDTO placeShip(@RequestBody PlaceShipRequestDTO request, HttpSession session) {
         BattleshipManager manager = (BattleshipManager) session.getAttribute("game");
+        session.setAttribute("game", manager);
         return battleshipService.placeShip(request, manager);
     }
 
@@ -77,6 +78,7 @@ public class BoardController {
     @PostMapping("/attack")
     public AttackResponseDTO attack(@RequestBody AttackRequestDTO request, HttpSession session) {
         BattleshipManager manager = (BattleshipManager) session.getAttribute("game");
+        session.setAttribute("game", manager);
         return battleshipService.processAttack(request, manager);
     }
 

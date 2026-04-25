@@ -3,7 +3,7 @@ package org.fdu;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Stateless service responsible for resolving a single Battleship turn.
@@ -21,17 +21,6 @@ import java.util.Random;
  * </p>
  */
 public class AttackProcessor implements Serializable {
-
-    private final Random random;
-
-    public AttackProcessor() {
-        this.random = new Random();
-    }
-
-    public AttackProcessor(Random random) {
-        this.random = random;
-    }
-
     /**
      * Processes a single attack from the player against the computer's board,
      * then fires the computer's random counter-attack against the human's home grid.
@@ -50,7 +39,6 @@ public class AttackProcessor implements Serializable {
      *         and the computer's move coordinates
      */
     public TurnResultDTO processAttack(int row, int col, PlayerDTO humanDTO, PlayerDTO computerDTO) {
-
         // Deep-copy all grids so incoming DTOs remain immutable
         Cell[][] newShipGrid = copyGrid(computerDTO.grid());
         Cell[][] newTrackingGrid = copyGrid(humanDTO.grid());
@@ -76,7 +64,7 @@ public class AttackProcessor implements Serializable {
                 : humanDTO.guessesLeft() - 1;
 
         // ----------------------------------------------------------------
-        // Check if the player just won
+        // Check if the player just won or ran out of guesses
         // ----------------------------------------------------------------
         if (allShipsSunk(newShipGrid)) {
             PlayerDTO updatedHuman = new PlayerDTO(newTrackingGrid, newHomeGrid, guessesLeft,
@@ -86,9 +74,6 @@ public class AttackProcessor implements Serializable {
             return new TurnResultDTO(updatedHuman, updatedComputer, sunkShip, null, -1, -1);
         }
 
-        // ----------------------------------------------------------------
-        // Check if the player ran out of guesses
-        // ----------------------------------------------------------------
         if (guessesLeft <= 0) {
             PlayerDTO updatedHuman = new PlayerDTO(newTrackingGrid, newHomeGrid, 0,
                     GameStatus.LOSS, humanDTO.ships(), humanDTO.homeShips());
@@ -98,7 +83,7 @@ public class AttackProcessor implements Serializable {
         }
 
         // ----------------------------------------------------------------
-        // Computer's random move on the human's home grid
+        // Computer's random move
         // ----------------------------------------------------------------
         int[] computerMove = pickRandomUnattackedCell(newHomeGrid);
         int computerRow = computerMove[0];
@@ -119,7 +104,6 @@ public class AttackProcessor implements Serializable {
         // ----------------------------------------------------------------
         boolean computerWon = allShipsSunk(newHomeGrid);
         GameStatus humanStatus = computerWon ? GameStatus.LOSS : GameStatus.IN_PROGRESS;
-
         PlayerDTO updatedHuman = new PlayerDTO(newTrackingGrid, newHomeGrid, guessesLeft,
                 humanStatus, humanDTO.ships(), humanDTO.homeShips());
         PlayerDTO updatedComputer = new PlayerDTO(newShipGrid, null, 0,
@@ -184,6 +168,6 @@ public class AttackProcessor implements Serializable {
             for (int c = 0; c < grid[r].length; c++)
                 if (grid[r][c] != Cell.HIT && grid[r][c] != Cell.MISS)
                     available.add(new int[]{ r, c });
-        return available.get(random.nextInt(available.size()));
+        return available.get(ThreadLocalRandom.current().nextInt(available.size()));
     }
 }

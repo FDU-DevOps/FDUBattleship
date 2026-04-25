@@ -4,7 +4,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import java.util.List;
-import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -17,7 +16,7 @@ class AttackProcessorTest {
 
     @BeforeEach
     void setUp() {
-        processor = new AttackProcessor(new Random(42));
+        processor = new AttackProcessor();
 
         shipGrid = new Cell[10][10];
         trackingGrid = new Cell[10][10];

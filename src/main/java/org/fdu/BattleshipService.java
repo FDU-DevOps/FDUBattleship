@@ -32,12 +32,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class BattleshipService {
 
-    private final AttackProcessor attackProcessor;
-
-    public BattleshipService() {
-        this.attackProcessor = new AttackProcessor();
-    }
-
     // -------------------------------------------------------------------------
     // Game lifecycle
     // -------------------------------------------------------------------------
@@ -141,10 +135,7 @@ public class BattleshipService {
 
         int row = request.row();
         int col = request.column();
-
         PlayerDTO human    = manager.getHumanDTO();
-        PlayerDTO computer = manager.getComputerDTO();
-
         // Reject out-of-bounds
         if (row < 0 || row >= 10 || col < 0 || col >= 10) {
             return new AttackResponseDTO(
@@ -161,17 +152,16 @@ public class BattleshipService {
             return new AttackResponseDTO(
                     convertGrid(trackingGrid),
                     convertGrid(human.homeGrid()),
-                    human.guessesLeft(), human.gameStatus().name(),
+                    human.guessesLeft(),
+                    human.gameStatus().name(),
                     "Cell already attacked",
                     -1, -1, "", true, null, null
             );
         }
 
-        // Process the full turn
-        TurnResultDTO turn = attackProcessor.processAttack(row, col, human, computer);
-
-        manager.setHumanDTO(turn.updatedHuman());
-        manager.setComputerDTO(turn.updatedComputer());
+        // Process the full turn with the manager using a per-attack processor. Less State, and updates DTOs
+        AttackProcessor processor = new AttackProcessor();
+        TurnResultDTO turn = manager.performTurn(row, col, processor);
 
         String playerMessage  = buildPlayerMessage(turn, row, col);
         String computerMessage = buildComputerMessage(turn);

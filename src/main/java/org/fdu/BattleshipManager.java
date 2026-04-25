@@ -27,9 +27,6 @@ public class BattleshipManager implements Serializable {
     private PlayerDTO humanDTO;
     private PlayerDTO computerDTO;
 
-    private AttackProcessor attackProcessor;
-
-
     /**
      * Constructs a new BattleShipManager and initializes all game components.
      * <p>
@@ -39,9 +36,31 @@ public class BattleshipManager implements Serializable {
      * with full guess count and IN_PROGRESS status.
      * </p>
      */
-
     public BattleshipManager() { initializePlacementPhase(); }
 
+    /**
+     * Per-session turn, rechecks tracking because race conditions:
+     * If already hit, returns immediately and don't let computer move
+     * Otherwise it delegates to the provided AttackProcessor, persists the
+     * returned DTOs, and returns the TurnResultDTO.
+     */
+    public synchronized TurnResultDTO performTurn(int row, int col, AttackProcessor processor) {
+        // if no game started
+        if (humanDTO == null || computerDTO == null) {
+            return new TurnResultDTO(humanDTO, computerDTO, null, null, -1, -1);
+        }
+        //already hit
+        Cell[][] tracking = humanDTO.grid();
+        if (tracking != null && (tracking[row][col] == Cell.HIT || tracking[row][col] == Cell.MISS)) {
+            // Return unchanged
+            return new TurnResultDTO(humanDTO, computerDTO, null, null, -1, -1);
+        }
+        // per-attack processor handles attacks and updates
+        TurnResultDTO result = processor.processAttack(row, col, this.humanDTO, this.computerDTO);
+        this.humanDTO = result.updatedHuman();
+        this.computerDTO = result.updatedComputer();
+        return result;
+    }
     /**
      * Constructs and initializes all game components for a new session. This skips manual placement
      * <p>
@@ -52,7 +71,7 @@ public class BattleshipManager implements Serializable {
      * detect sunk ships after each hit.
      * </p>
      */
-    public void initializeGame() {
+    public synchronized void initializeGame() {
 
         int[] shipLengths = {5, 4, 3, 3, 2};
 
@@ -74,8 +93,7 @@ public class BattleshipManager implements Serializable {
      * The game is not yet attackable after this call.
      * </p>
      */
-    public void initializePlacementPhase() {
-        attackProcessor = new AttackProcessor();
+    public synchronized void initializePlacementPhase() {
         int[] shipLengths = {5, 4, 3, 3, 2}; //ToDo move this into a constant
 
         // --- Computer's ship grid ---
@@ -103,7 +121,7 @@ public class BattleshipManager implements Serializable {
      * @param horizontal true = horizontal, false = vertical
      * @return true if placed successfully, false if out of bounds or overlapping
      */
-    public boolean placePlayerShip(int row, int col, int shipLength, boolean horizontal) {
+    public synchronized boolean placePlayerShip(int row, int col, int shipLength, boolean horizontal) {
         Cell[][] homeGrid = humanDTO.homeGrid();
 
         // --- Bounds check ---
@@ -277,9 +295,6 @@ public class BattleshipManager implements Serializable {
 
     public PlayerDTO getComputerDTO() { return computerDTO; }
     public void setComputerDTO(PlayerDTO computerDTO) { this.computerDTO = computerDTO; }
-
-    public AttackProcessor getAttackProcessor() { return attackProcessor; }
-
     public static int getBoardSize()  { return SIZE; }
     public static int getMaxGuesses() { return MAX_GUESSES; }
 }
