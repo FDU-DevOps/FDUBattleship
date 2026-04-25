@@ -1,4 +1,5 @@
 package org.fdu;
+import java.io.Serializable;
 import java.util.List;
 /**
  * Immutable value representing one ship on the board.
@@ -10,7 +11,7 @@ import java.util.List;
  *
  * @param cells each element is an int[]{row, col} for one ship cell
  */
-public record Ship(List<int[]> cells) {
+public record Ship(List<int[]> cells) implements Serializable {
 
     /**
      * Returns true when every cell of this ship reads HIT on the given grid.

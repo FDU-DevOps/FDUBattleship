@@ -1,5 +1,6 @@
 package org.fdu;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -19,7 +20,7 @@ import java.util.Random;
  * Spring singleton.
  * </p>
  */
-public class AttackProcessor {
+public class AttackProcessor implements Serializable {
 
     private final Random random;
 

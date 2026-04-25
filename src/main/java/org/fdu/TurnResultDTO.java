@@ -1,5 +1,7 @@
 package org.fdu;
 
+import java.io.Serializable;
+
 /**
  * Immutable result of one full game turn (player attack + computer retaliation).
  * <p>
@@ -28,5 +30,5 @@ public record TurnResultDTO(
         Ship homeSunkShip,
         int computerRow,
         int computerCol
-) {}
+) implements Serializable {}
 
