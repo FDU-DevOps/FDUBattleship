@@ -43,50 +43,46 @@ public class BattleshipManager {
     public BattleshipManager() { }
 
     /**
-     * Constructs and initializes all game components for a new session.
+     * Constructs and initializes all game components for a new session. This skips manual placement
      * <p>
      * Creates a stateless BattleBoard renderer and AttackProcessor. Builds the
-     * computer's ship grid and the human's home grid with ships placed randomly.
+     * computer's ship grid (in initializePlacementPhase()) and the human's home grid with random placements.
      * Both sides use the same fleet: ship lengths {5, 4, 3, 3, 2}.
      * Ship objects are collected during placement so AttackProcessor can
      * detect sunk ships after each hit.
      * </p>
      */
     public void initializeGame() {
-        battleBoard = new BattleBoard();
-        attackProcessor = new AttackProcessor();
+
         int[] shipLengths = {5, 4, 3, 3, 2};
 
-        // --- Computer's ship grid ---
-        Cell[][] computerGrid = blankGrid(null);
-        List<Ship> computerShips = placeAllShips(computerGrid, shipLengths);
-        computerDTO = new PlayerDTO(computerGrid, null, 0, GameStatus.IN_PROGRESS, computerShips, null);
+        //Creates the Computer Ship Grid and Tracking Grid
+        initializePlacementPhase();
 
         // --- Human's home grid (ships shown to the player, targeted by the computer) ---
-        Cell[][] homeGrid = blankGrid(null);
+        Cell[][] homeGrid = humanDTO.homeGrid(); //empty grid from the placement phase that will now have ships
         List<Ship> homeShips = placeAllShips(homeGrid, shipLengths);
 
-        // --- Human's tracking grid (blank, updated as player attacks) ---
-        Cell[][] trackingGrid = blankGrid(null);
-
-        humanDTO = new PlayerDTO(trackingGrid, homeGrid, MAX_GUESSES,
+        //humanDTO.grid() is still empty, homeGrid is now filled with the random ships
+        humanDTO = new PlayerDTO(humanDTO.grid(), homeGrid, MAX_GUESSES,
                 GameStatus.IN_PROGRESS, new ArrayList<>(), homeShips);
     }
     /**
-     * Phase 1 of game initialization — sets up computer ships and blank player grids.
+     * Phase 1 of game initialization — sets up computer ships and blank player grids so manual placement can begin.
+     * <p>
      * Called at session start before the player places their ships.
      * The game is not yet attackable after this call.
+     * </p>
      */
     public void initializePlacementPhase() {
-        battleBoard     = new BattleBoard();
+        battleBoard = new BattleBoard();
         attackProcessor = new AttackProcessor();
-
-        int[] shipLengths = {5, 4, 3, 3, 2};
+        int[] shipLengths = {5, 4, 3, 3, 2}; //ToDo move this into a constant
 
         // --- Computer's ship grid ---
-        Cell[][] shipGrid = blankGrid(null);
-        List<Ship> computerShips = placeAllShips(shipGrid, shipLengths);
-        computerDTO = new PlayerDTO(shipGrid, null, 0, GameStatus.IN_PROGRESS, computerShips, null);
+        Cell[][] compGrid = blankGrid(null);
+        List<Ship> compShips = placeAllShips(compGrid, shipLengths);
+        computerDTO = new PlayerDTO(compGrid, null, 0, GameStatus.IN_PROGRESS, compShips, null);
 
         // --- Human's home grid (blank, awaiting player placement) ---
         Cell[][] homeGrid = blankGrid(null);
