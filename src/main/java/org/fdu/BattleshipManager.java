@@ -23,6 +23,13 @@ public class BattleshipManager implements Serializable {
     // Total number of attacks the player is allowed before the game is lost
     private static final int MAX_GUESSES = 30;
 
+    private static final int[] FLEET_LENGTHS = {5, 4, 3, 3, 2};
+    private static final int TOTAL_SHIP_CELLS = Arrays.stream(FLEET_LENGTHS).sum(); // or computed from FLEET_LENGTHS
+    private static final int MAX_SHIP_PLACEMENT_ATTEMPTS = 1000;
+
+    private static final char COLUMN_LABEL_START = 'A';
+    private static final int ROW_LABEL_OFFSET = 1;
+
     // Reassigned each turn with the updated DTO returned by AttackProcessor
     private PlayerDTO humanDTO;
     private PlayerDTO computerDTO;
@@ -73,14 +80,12 @@ public class BattleshipManager implements Serializable {
      */
     public synchronized void initializeGame() {
 
-        int[] shipLengths = {5, 4, 3, 3, 2};
-
         //Creates the Computer Ship Grid and Tracking Grid
         initializePlacementPhase();
 
         // --- Human's home grid (ships shown to the player, targeted by the computer) ---
         Cell[][] homeGrid = humanDTO.homeGrid(); //empty grid from the placement phase that will now have ships
-        List<Ship> homeShips = placeAllShips(homeGrid, shipLengths);
+        List<Ship> homeShips = placeAllShips(homeGrid);
 
         //humanDTO.grid() is still empty, homeGrid is now filled with the random ships
         humanDTO = new PlayerDTO(humanDTO.grid(), homeGrid, MAX_GUESSES,
@@ -94,11 +99,10 @@ public class BattleshipManager implements Serializable {
      * </p>
      */
     public synchronized void initializePlacementPhase() {
-        int[] shipLengths = {5, 4, 3, 3, 2}; //ToDo move this into a constant
 
         // --- Computer's ship grid ---
         Cell[][] compGrid = blankGrid(null);
-        List<Ship> compShips = placeAllShips(compGrid, shipLengths);
+        List<Ship> compShips = placeAllShips(compGrid);
         computerDTO = new PlayerDTO(compGrid, null, 0, GameStatus.IN_PROGRESS, compShips, null);
 
         // --- Human's home grid (blank, awaiting player placement) ---
@@ -151,7 +155,6 @@ public class BattleshipManager implements Serializable {
         homeShips.add(new Ship(cells));
         humanDTO = new PlayerDTO(humanDTO.grid(), homeGrid, humanDTO.guessesLeft(),
                 GameStatus.PLACEMENT, humanDTO.ships(), homeShips);
-
         return true;
     }
 
@@ -166,7 +169,7 @@ public class BattleshipManager implements Serializable {
         for (Cell[] row : humanDTO.homeGrid())
             for (Cell c : row)
                 if (c == Cell.SHIP) shipCells++;
-        return shipCells == 17;
+        return shipCells == TOTAL_SHIP_CELLS;
     }
     // -------------------------------------------------------------------------
     // Private helpers
@@ -197,15 +200,14 @@ public class BattleshipManager implements Serializable {
      * </p>
      *
      * @param grid grid on which ships will be placed
-     * @param shipLengths contains the number of cells that each ship will occupy
      * @return List of properly placed Ship objects
      */
-    private List<Ship> placeAllShips(Cell[][] grid, int[] shipLengths) {
+    private List<Ship> placeAllShips(Cell[][] grid) {
         while (true) {
             try {
                 blankGrid(grid);
                 List<Ship> allShips = new ArrayList<>();
-                for (int len : shipLengths) allShips.add(placeShip(grid, len));
+                for (int len : BattleshipManager.FLEET_LENGTHS) allShips.add(placeShip(grid, len));
                 return allShips; //(Returns once all ships placed successfully)
             } catch (RuntimeException e) {
                 System.out.println("Impossible to place all ships, trying again...");
@@ -225,8 +227,7 @@ public class BattleshipManager implements Serializable {
      */
     private Ship placeShip(Cell[][] grid, int shipLength) {
         int attemptCounter = 0;
-        final int ATTEMPTS = 1000;
-        while (attemptCounter < ATTEMPTS) {
+        while (attemptCounter < MAX_SHIP_PLACEMENT_ATTEMPTS) {
             attemptCounter++;
             boolean horizontal = ThreadLocalRandom.current().nextBoolean();
             int row = ThreadLocalRandom.current().nextInt(SIZE);
@@ -253,7 +254,7 @@ public class BattleshipManager implements Serializable {
                 int c = horizontal ? col + i : col;
                 grid[r][c] = Cell.SHIP;
                 cells.add(new int[]{ r, c });
-                System.out.println("Placing ship cell at: " + (char)('A' + c) + (r + 1));
+                System.out.println("Placing ship cell at: " + (char)(COLUMN_LABEL_START + c) + (r + ROW_LABEL_OFFSET));
             }
             System.out.println("--- Ship of length " + shipLength + " placed ---");
             return new Ship(cells);
@@ -281,7 +282,7 @@ public class BattleshipManager implements Serializable {
             int r = isHorizontal ? startRow : startRow + i;
             int c = isHorizontal ? startCol + i : startCol;
             dto.grid()[r][c] = Cell.SHIP;
-            System.out.println("Placing ship cell at: " + (char)('A' + c) + (r + 1));
+            System.out.println("Placing ship cell at: " + (char)(COLUMN_LABEL_START + c) + (r + ROW_LABEL_OFFSET));
         }
         System.out.println("--- Ship of length " + shipLength + " placed ---");
     }
