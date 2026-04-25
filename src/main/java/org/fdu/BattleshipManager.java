@@ -25,8 +25,7 @@ public class BattleshipManager {
     // Reassigned each turn with the updated DTO returned by AttackProcessor
     private PlayerDTO humanDTO;
     private PlayerDTO computerDTO;
-    // Stateless, shared across all turns
-    private BattleBoard battleBoard;
+
     private AttackProcessor attackProcessor;
 
 
@@ -75,7 +74,6 @@ public class BattleshipManager {
      * </p>
      */
     public void initializePlacementPhase() {
-        battleBoard = new BattleBoard();
         attackProcessor = new AttackProcessor();
         int[] shipLengths = {5, 4, 3, 3, 2}; //ToDo move this into a constant
 
@@ -279,7 +277,6 @@ public class BattleshipManager {
     public PlayerDTO getComputerDTO() { return computerDTO; }
     public void setComputerDTO(PlayerDTO computerDTO) { this.computerDTO = computerDTO; }
 
-    public BattleBoard     getBattleBoard()     { return battleBoard; }
     public AttackProcessor getAttackProcessor() { return attackProcessor; }
 
     public static int getBoardSize()  { return SIZE; }
