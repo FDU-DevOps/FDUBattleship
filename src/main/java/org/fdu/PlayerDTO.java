@@ -1,4 +1,5 @@
 package org.fdu;
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -36,4 +37,4 @@ public record PlayerDTO(Cell[][] grid,
                         GameStatus gameStatus,
                         List<Ship> ships,
                         List<Ship> homeShips
-) {}
+) implements Serializable {}

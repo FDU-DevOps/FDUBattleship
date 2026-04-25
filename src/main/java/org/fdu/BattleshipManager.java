@@ -1,5 +1,6 @@
 package org.fdu;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -15,7 +16,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * App calls startGame() to begin play.
  * </p>
  */
-public class BattleshipManager {
+public class BattleshipManager implements Serializable {
 
     // Fixed board dimension, both axes are 10x10 throughout the entire game
     private static final int SIZE = 10;
@@ -32,19 +33,19 @@ public class BattleshipManager {
     /**
      * Constructs a new BattleShipManager and initializes all game components.
      * <p>
-     * Creates a stateless BattleBoard renderer and AttackProcessor. Builds the
-     * computer's ship grid with a single 1x1 ship placed at a random location
-     * using java.util.Random. Builds the human player's blank tracking grid
+     * Creates a stateless BattleBoard and AttackProcessor. Builds the
+     * computer's ship grid with a fleet of ships placed at random locations
+     * using ThreadLocalRandom. Builds the human player's blank tracking grid
      * with full guess count and IN_PROGRESS status.
      * </p>
      */
 
-    public BattleshipManager() { }
+    public BattleshipManager() { initializePlacementPhase(); }
 
     /**
      * Constructs and initializes all game components for a new session. This skips manual placement
      * <p>
-     * Creates a stateless BattleBoard renderer and AttackProcessor. Builds the
+     * Creates a stateless BattleBoard and AttackProcessor. Builds the
      * computer's ship grid (in initializePlacementPhase()) and the human's home grid with random placements.
      * Both sides use the same fleet: ship lengths {5, 4, 3, 3, 2}.
      * Ship objects are collected during placement so AttackProcessor can
