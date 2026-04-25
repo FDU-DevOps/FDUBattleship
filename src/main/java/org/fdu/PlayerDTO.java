@@ -4,10 +4,10 @@ import java.util.List;
 /**
  * Data Transfer Object representing the current state of one side of the game.
  * <p>
- * The single DTO class in the project. BattleShipManager holds two instances:
+ * BattleShipManager holds two instances:
  * humanDTO for the human player's tracking grid, and computerDTO for the
  * computer's ship grid. AttackProcessor reads from both and returns updated
- * copies. No other DTO classes exist.
+ * copies.
  * </p>
  *
  * @param grid        2D array of Cell values indexed as grid[row][col].
