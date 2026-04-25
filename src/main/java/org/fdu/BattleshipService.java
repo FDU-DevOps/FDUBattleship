@@ -50,17 +50,15 @@ public class BattleshipService {
      * @return starting guess count
      */
     public int startGame(BattleshipManager manager) {
-        if (manager.isPlacementComplete()) {
-            // Player already placed ships manually, just mark game as started
+        if (manager.getHumanDTO() == null || !manager.isPlacementComplete()) {
+            manager.initializeGame();  // fresh random game
+        } else {
+            // Player placed ships manually
             PlayerDTO human = manager.getHumanDTO();
-            PlayerDTO updated = new PlayerDTO(
+            manager.setHumanDTO(new PlayerDTO(
                     human.grid(), human.homeGrid(), BattleshipManager.getMaxGuesses(),
                     GameStatus.IN_PROGRESS, human.ships(), human.homeShips()
-            );
-            manager.setHumanDTO(updated);
-        } else {
-            // No placement done, fully random game
-            manager.initializeGame();
+            ));
         }
         return manager.getHumanDTO().guessesLeft();
     }
