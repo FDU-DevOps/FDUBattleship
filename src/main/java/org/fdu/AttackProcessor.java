@@ -22,6 +22,8 @@ import java.util.Random;
  */
 public class AttackProcessor implements Serializable {
 
+    private static final int NO_COORD = -1;
+
     private final Random random;
 
     public AttackProcessor() {
@@ -83,7 +85,7 @@ public class AttackProcessor implements Serializable {
                     GameStatus.WIN, humanDTO.ships(), humanDTO.homeShips());
             PlayerDTO updatedComputer = new PlayerDTO(newShipGrid, null, 0,
                     GameStatus.LOSS, computerDTO.ships(), null);
-            return new TurnResultDTO(updatedHuman, updatedComputer, sunkShip, null, -1, -1);
+            return new TurnResultDTO(updatedHuman, updatedComputer, sunkShip, null, NO_COORD, NO_COORD);
         }
 
         // ----------------------------------------------------------------
@@ -94,7 +96,7 @@ public class AttackProcessor implements Serializable {
                     GameStatus.LOSS, humanDTO.ships(), humanDTO.homeShips());
             PlayerDTO updatedComputer = new PlayerDTO(newShipGrid, null, 0,
                     GameStatus.WIN, computerDTO.ships(), null);
-            return new TurnResultDTO(updatedHuman, updatedComputer, sunkShip, null, -1, -1);
+            return new TurnResultDTO(updatedHuman, updatedComputer, sunkShip, null, NO_COORD, NO_COORD);
         }
 
         // ----------------------------------------------------------------

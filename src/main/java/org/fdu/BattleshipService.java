@@ -34,6 +34,12 @@ public class BattleshipService {
 
     private final AttackProcessor attackProcessor;
 
+    private static final int NO_COORD = -1;
+    private static final int MIN_INDEX = 0;
+    private static final char COLUMN_LABEL_START = 'A';
+    private static final int ROW_LABEL_OFFSET = 1;
+    private static final String STATUS_NO_GAME = "NO_GAME";
+
     public BattleshipService() {
         this.attackProcessor = new AttackProcessor();
     }
@@ -107,7 +113,7 @@ public class BattleshipService {
 
         return new AttackResponseDTO(
                 null, updatedGrid, 0, status, message,
-                -1, -1, "", !success, null, null
+                NO_COORD, NO_COORD, "", !success, null, null
         );
     }
 
@@ -146,12 +152,12 @@ public class BattleshipService {
         PlayerDTO computer = manager.getComputerDTO();
 
         // Reject out-of-bounds
-        if (row < 0 || row >= 10 || col < 0 || col >= 10) {
+        if (row < MIN_INDEX || row >= BattleshipManager.getBoardSize() || col < MIN_INDEX || col >= BattleshipManager.getBoardSize()) {
             return new AttackResponseDTO(
                     null, null,
                     human.guessesLeft(), human.gameStatus().name(),
                     "Invalid coordinates",
-                    -1, -1, "", true, null, null
+                    NO_COORD, NO_COORD, "", true, null, null
             );
         }
 
@@ -163,7 +169,7 @@ public class BattleshipService {
                     convertGrid(human.homeGrid()),
                     human.guessesLeft(), human.gameStatus().name(),
                     "Cell already attacked",
-                    -1, -1, "", true, null, null
+                    NO_COORD, NO_COORD, "", true, null, null
             );
         }
 
@@ -219,11 +225,11 @@ public class BattleshipService {
         int compRow = turn.computerRow();
         int compCol = turn.computerCol();
 
-        if (compRow < 0) {
+        if (compRow == NO_COORD) {
             return "";
         }
 
-        String coord = (char) ('A' + compCol) + String.valueOf(compRow + 1);
+        String coord = (char) (COLUMN_LABEL_START + compCol) + String.valueOf(compRow + ROW_LABEL_OFFSET);
         boolean compHit = turn.updatedHuman().homeGrid()[compRow][compCol] == Cell.HIT;
 
         if (turn.updatedHuman().gameStatus() == GameStatus.LOSS) {
@@ -270,8 +276,8 @@ public class BattleshipService {
      */
     private AttackResponseDTO errorResponse(String message) {
         return new AttackResponseDTO(
-                null, null, 0, "NO_GAME", message,
-                -1, -1, "", true, null, null
+                null, null, 0, STATUS_NO_GAME, message,
+                NO_COORD, NO_COORD, "", true, null, null
         );
     }
 }
