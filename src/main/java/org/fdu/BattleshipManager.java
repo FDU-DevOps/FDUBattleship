@@ -53,24 +53,21 @@ public class BattleshipManager {
      * </p>
      */
     public void initializeGame() {
-        battleBoard   = new BattleBoard();
+        battleBoard = new BattleBoard();
         attackProcessor = new AttackProcessor();
-
         int[] shipLengths = {5, 4, 3, 3, 2};
 
         // --- Computer's ship grid ---
-        Cell[][] shipGrid = blankGrid();
-        List<Ship> computerShips = new ArrayList<>();
-        for (int len : shipLengths) computerShips.add(placeShip(shipGrid, len));
-        computerDTO = new PlayerDTO(shipGrid, null, 0, GameStatus.IN_PROGRESS, computerShips, null);
+        Cell[][] computerGrid = blankGrid(null);
+        List<Ship> computerShips = placeAllShips(computerGrid, shipLengths);
+        computerDTO = new PlayerDTO(computerGrid, null, 0, GameStatus.IN_PROGRESS, computerShips, null);
 
         // --- Human's home grid (ships shown to the player, targeted by the computer) ---
-        Cell[][] homeGrid = blankGrid();
-        List<Ship> homeShips = new ArrayList<>();
-        for (int len : shipLengths) homeShips.add(placeShip(homeGrid, len));
+        Cell[][] homeGrid = blankGrid(null);
+        List<Ship> homeShips = placeAllShips(homeGrid, shipLengths);
 
         // --- Human's tracking grid (blank, updated as player attacks) ---
-        Cell[][] trackingGrid = blankGrid();
+        Cell[][] trackingGrid = blankGrid(null);
 
         humanDTO = new PlayerDTO(trackingGrid, homeGrid, MAX_GUESSES,
                 GameStatus.IN_PROGRESS, new ArrayList<>(), homeShips);
@@ -87,16 +84,15 @@ public class BattleshipManager {
         int[] shipLengths = {5, 4, 3, 3, 2};
 
         // --- Computer's ship grid ---
-        Cell[][] shipGrid = blankGrid();
-        List<Ship> computerShips = new ArrayList<>();
-        for (int len : shipLengths) computerShips.add(placeShip(shipGrid, len));
+        Cell[][] shipGrid = blankGrid(null);
+        List<Ship> computerShips = placeAllShips(shipGrid, shipLengths);
         computerDTO = new PlayerDTO(shipGrid, null, 0, GameStatus.IN_PROGRESS, computerShips, null);
 
         // --- Human's home grid (blank, awaiting player placement) ---
-        Cell[][] homeGrid = blankGrid();
+        Cell[][] homeGrid = blankGrid(null);
 
         // --- Human's tracking grid (blank) ---
-        Cell[][] trackingGrid = blankGrid();
+        Cell[][] trackingGrid = blankGrid(null);
 
         humanDTO = new PlayerDTO(trackingGrid, homeGrid, MAX_GUESSES,
                 GameStatus.PLACEMENT, new ArrayList<>(), new ArrayList<>());
@@ -163,10 +159,45 @@ public class BattleshipManager {
     // Private helpers
     // -------------------------------------------------------------------------
 
-    private Cell[][] blankGrid() {
-        Cell[][] grid = new Cell[SIZE][SIZE];
+    /**
+     * Sets all cells in a grid to water.
+     * If the grid is null, it initializes a new one.
+     * @param grid the grid that is set to water
+     * @return blank grid (all cells water)
+     */
+    private Cell[][] blankGrid(Cell[][] grid) {
+        if (grid == null) {
+            grid = new Cell[SIZE][SIZE];
+        }
         for (Cell[] row : grid) Arrays.fill(row, Cell.WATER);
         return grid;
+    }
+
+    /**
+     * Places all ships but will retry on failure by wiping the board
+     *
+     * <p>
+     * Attempts to place all ships in shipLengths from longest to shortest.
+     * If the placement algorithm fails, an exception is thrown.
+     * placeShip can get into impossible situations, and this method handles that
+     * This method catches the exception, wipes the grid with blankGrid(Cell[][]) and then returns.
+     * </p>
+     *
+     * @param grid grid on which ships will be placed
+     * @param shipLengths contains the number of cells that each ship will occupy
+     * @return List of properly placed Ship objects
+     */
+    private List<Ship> placeAllShips(Cell[][] grid, int[] shipLengths) {
+        while (true) {
+            try {
+                blankGrid(grid);
+                List<Ship> allShips = new ArrayList<>();
+                for (int len : shipLengths) allShips.add(placeShip(grid, len));
+                return allShips; //(Returns once all ships placed successfully)
+            } catch (RuntimeException e) {
+                System.out.println("Impossible to place all ships, trying again...");
+            }
+        }
     }
 
     /**
@@ -177,10 +208,13 @@ public class BattleshipManager {
      * @param shipLength number of cells the ship occupies
      * @return Ship record with coordinates of every placed cell
      *
-     * ToDo: throw an exception if no valid position can be found after N attempts
+     *
      */
     private Ship placeShip(Cell[][] grid, int shipLength) {
-        while (true) {
+        int attemptCounter = 0;
+        final int ATTEMPTS = 1000;
+        while (attemptCounter < ATTEMPTS) {
+            attemptCounter++;
             boolean horizontal = ThreadLocalRandom.current().nextBoolean();
             int row = ThreadLocalRandom.current().nextInt(SIZE);
             int col = ThreadLocalRandom.current().nextInt(SIZE);
@@ -211,6 +245,8 @@ public class BattleshipManager {
             System.out.println("--- Ship of length " + shipLength + " placed ---");
             return new Ship(cells);
         }
+        // tried ATTEMPTS times and failed
+        throw new RuntimeException("Could not place ship of length " + shipLength);
     }
 
     // -------------------------------------------------------------------------
