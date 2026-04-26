@@ -3,8 +3,7 @@ package org.fdu;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import java.util.ArrayList;
+import java.util.NoSuchElementException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -48,25 +47,28 @@ class BattleshipServiceTest {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("Should return error if manager is null (no session)")
+    @DisplayName("Should throw when manager is null (no session)")
     void testProcessAttackNullManager() {
         AttackRequestDTO request = new AttackRequestDTO(0, 0);
-        AttackResponseDTO response = service.processAttack(request, null);
 
-        assertTrue(response.isError());
-        assertEquals("Start a game first", response.message());
+        NoSuchElementException ex = assertThrows(
+                NoSuchElementException.class,
+                () -> service.processAttack(request, null)
+        );
+        assertEquals("No active game session found", ex.getMessage());
     }
 
     @Test
     @DisplayName("Should reject attacks outside the 0-9 range")
     void testProcessAttackOutOfBounds() {
         service.startGame(manager);
-
         AttackRequestDTO request = new AttackRequestDTO(10, 10);
-        AttackResponseDTO response = service.processAttack(request, manager);
 
-        assertTrue(response.isError());
-        assertEquals("Invalid coordinates", response.message());
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.processAttack(request, manager)
+        );
+        assertEquals("Coordinates must be between 0 and 9", ex.getMessage());
     }
 
     @Test
@@ -75,14 +77,15 @@ class BattleshipServiceTest {
         service.startGame(manager);
         AttackRequestDTO request = new AttackRequestDTO(5, 5);
 
-        // First attack
+        // First attack should pass
         service.processAttack(request, manager);
 
-        // Second attack on same spot
-        AttackResponseDTO response = service.processAttack(request, manager);
-
-        assertTrue(response.isError());
-        assertEquals("Cell already attacked", response.message());
+        // Second attack on same spot should throw
+        IllegalStateException ex = assertThrows(
+                IllegalStateException.class,
+                () -> service.processAttack(request, manager)
+        );
+        assertEquals("Cell already attacked", ex.getMessage());
     }
 
     // -------------------------------------------------------------------------
@@ -90,16 +93,18 @@ class BattleshipServiceTest {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("Should return failure response if placement is invalid (out of bounds)")
+    @DisplayName("Should throw if placement is invalid (out of bounds)")
     void testInvalidPlacement() {
         service.startPlacement(manager);
 
         // Try to place a 5-cell ship starting at index 8 (will go off board)
         PlaceShipRequestDTO request = new PlaceShipRequestDTO(8, 8, 5, true);
-        AttackResponseDTO response = service.placeShip(request, manager);
 
-        assertTrue(response.isError());
-        assertEquals("Invalid placement", response.message());
+        IllegalStateException ex = assertThrows(
+                IllegalStateException.class,
+                () -> service.placeShip(request, manager)
+        );
+        assertEquals("Cannot place ship at requested position", ex.getMessage());
     }
 
     // -------------------------------------------------------------------------

@@ -44,7 +44,7 @@ class BoardControllerRestTest {
 
     @Test
     @DisplayName("Start a new game and verify allowed guesses is correct (at Max)")
-    // note: since we always reset b4 a test case, the reset will actually overwrite the original game board
+        // note: since we always reset b4 a test case, the reset will actually overwrite the original game board
     void testStartGame() {
         // start-game returns initial number of guesses allowed
         assertEquals (BattleshipManager.getMaxGuesses(), reset(userA));
@@ -78,7 +78,7 @@ class BoardControllerRestTest {
 
     @Test
     @DisplayName("Clear computer board, and place a 5 cell ship at 0,0")
-    //  void placeShip(PlayerDTO dto, int shipLength, boolean isHorizontal, int startCol, int startRow)
+        //  void placeShip(PlayerDTO dto, int shipLength, boolean isHorizontal, int startCol, int startRow)
     void testClearComputerBoard() {
 
         BattleshipManager manager = getBattleshipManager(userA);
@@ -133,7 +133,7 @@ class BoardControllerRestTest {
 
         // a 2nd hit - use assertResponse helper function
         AttackResponseDTO hitResponse = attack(userA, 9, 9);
-        assertResponse(hitResponse, 29, "in_progress", "hit", false);
+        assertResponse(hitResponse, 29, "in_progress", "hit");
 
         // print out the DTOs for reference
         computerStatus = getComputerStatus(userA);
@@ -159,19 +159,19 @@ class BoardControllerRestTest {
 
         // let's try a miss, 2 hits, a miss and another hit
         AttackResponseDTO hitResponse = attack(userA, 5, 5);
-        assertResponse(hitResponse, 29, "in_progress", "miss", false);
+        assertResponse(hitResponse, 29, "in_progress", "miss");
 
         hitResponse = attack(userA, 1, 0);
-        assertResponse(hitResponse, 29, "in_progress", "hit", false);
+        assertResponse(hitResponse, 29, "in_progress", "hit");
 
         hitResponse = attack(userA, 2, 0);
-        assertResponse(hitResponse, 29, "in_progress", "hit", false);
+        assertResponse(hitResponse, 29, "in_progress", "hit");
 
         hitResponse = attack(userA, 9, 0);  // miss
-        assertResponse(hitResponse, 28, "in_progress", "miss", false);
+        assertResponse(hitResponse, 28, "in_progress", "miss");
 
         hitResponse = attack(userA, 0, 0);  // sunk my ship
-        assertResponse(hitResponse, 28, "win", "You win", false);
+        assertResponse(hitResponse, 28, "win", "You win");
 
     }
 
@@ -182,27 +182,49 @@ class BoardControllerRestTest {
 
         PlayerDTO computerStatus = manager.getComputerDTO();
         manager.clearGrid(computerStatus);
-        // place a 5 cell ship vertically starting from column J and row 6 and verify
+        // place a 2 cell ship horizontally starting from 5,5 and verify
         manager.placeShip(computerStatus, 2, true, 5, 5);
         // sync and update the local reference
         userA.post().uri("/api/battleship/debug/set-manager").body(manager).exchange();
 
-        // should now show 5, 5 as a hit and 4, 4 as a miss
+        // valid attacks first (still 200 + AttackResponseDTO)
         AttackResponseDTO hitResponse = attack(userA, 5, 5);
-        assertResponse(hitResponse, 30, "in_progress", "hit", false);
-        // should now show 5, 5 as a hit and 4, 4 as a miss
-        hitResponse = attack(userA, 4, 4);
-        assertResponse(hitResponse, 29, "in_progress", "miss", false);
+        assertResponse(hitResponse, 30, "in_progress", "hit");
 
-        // invalid row and columns - guesses don't change
-        hitResponse = attack(userA, -1, 4);
-        assertResponse(hitResponse, 29, "in_progress", "", true);
-        hitResponse = attack(userA, 1, 10);
-        assertResponse(hitResponse, 29, "in_progress", "", true);
-        hitResponse = attack(userA, 5, 5);
-        assertResponse(hitResponse, 29, "in_progress", "already attacked", true);
-        hitResponse = attack(userA, 4, 4);
-        assertResponse(hitResponse, 29, "in_progress", "already attacked", true);
+        AttackResponseDTO missResponse = attack(userA, 4, 4);
+        assertResponse(missResponse, 29, "in_progress", "miss");
+
+        // invalid row/col -> 400 Bad Request
+        userA.post().uri("/api/battleship/attack")
+                .body(new AttackRequestDTO(-1, 4))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.title").isEqualTo("Bad Request");
+
+        userA.post().uri("/api/battleship/attack")
+                .body(new AttackRequestDTO(1, 10))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.title").isEqualTo("Bad Request");
+
+        // duplicate attacks -> 422 Unprocessable Entity
+        userA.post().uri("/api/battleship/attack")
+                .body(new AttackRequestDTO(5, 5))
+                .exchange()
+                .expectStatus().isEqualTo(422)
+                .expectBody()
+                .jsonPath("$.title").isEqualTo("Unprocessable Entity")
+                .jsonPath("$.detail").value(msg -> assertThat(((String) msg).toLowerCase()).contains("already attacked"));
+
+        userA.post().uri("/api/battleship/attack")
+                .body(new AttackRequestDTO(4, 4))
+                .exchange()
+                .expectStatus().isEqualTo(422)
+                .expectBody()
+                .jsonPath("$.title").isEqualTo("Unprocessable Entity")
+                .jsonPath("$.detail").value(msg -> assertThat(((String) msg).toLowerCase()).contains("already attacked"));
     }
 
     @Test
@@ -231,17 +253,17 @@ class BoardControllerRestTest {
 
         // 5, 5 is a hit, 0, 0 a miss
         AttackResponseDTO response = attack(userA, 5, 5);
-        assertResponse(response, 30, "in_progress", "hit", false);
+        assertResponse(response, 30, "in_progress", "hit");
         // should now show 5, 5 as a hit and 4, 4 as a miss
         response = attack(userA, 0, 0);
-        assertResponse(response, 29, "in_progress", "miss", false);
+        assertResponse(response, 29, "in_progress", "miss");
 
         // 0, 0 is a hit, 5, 5 a miss
         response = attack(userB, 5, 5);
-        assertResponse(response, 29, "in_progress", "miss", false);
+        assertResponse(response, 29, "in_progress", "miss");
         // should now show 5, 5 as a hit and 4, 4 as a miss
         response = attack(userB, 0, 0);
-        assertResponse(response, 29, "in_progress", "hit", false);
+        assertResponse(response, 29, "in_progress", "hit");
 
     }
 
@@ -307,7 +329,7 @@ class BoardControllerRestTest {
                 .returnResult()
                 .getResponseBody();
 
-        assertThat(response.isError()).isFalse();
+        assertThat(response).isNotNull();
         assertThat(response.message()).containsIgnoringCase("ship placed");
         assertThat(response.homeGrid()[0][0]).isEqualTo("ship");
         assertThat(response.homeGrid()[0][4]).isEqualTo("ship");
@@ -318,19 +340,15 @@ class BoardControllerRestTest {
     void testPlaceInvalidShip() {
         userA.post().uri("/api/battleship/placement-start").exchange();
 
-        // 5 cell ship starting at col 8 horizontally goes out of bounds
         PlaceShipRequestDTO request = new PlaceShipRequestDTO(0, 8, 5, true);
-        AttackResponseDTO response = userA.post()
+
+        userA.post()
                 .uri("/api/battleship/place-ship")
                 .body(request)
                 .exchange()
-                .expectStatus().isOk()
-                .expectBody(AttackResponseDTO.class)
-                .returnResult()
-                .getResponseBody();
-
-        assertThat(response.isError()).isTrue();
-        assertThat(response.message()).containsIgnoringCase("invalid placement");
+                .expectStatus().isEqualTo(422)
+                .expectBody()
+                .jsonPath("$.title").isEqualTo("Unprocessable Entity");
     }
 
     // ----------------------   HELPER FUNCTIONS          --------------------------------
@@ -366,14 +384,13 @@ class BoardControllerRestTest {
 
     // Assertion helper
     private void assertResponse(AttackResponseDTO response, int guessesLeft,
-                                String expectedStatus, String message, boolean isError) {
+                                String expectedStatus, String message) {
         assertThat(response)
                 .as("The server returned a null AttackResponseDTO. Check for 500 errors in the console.")
                 .isNotNull();
         assertThat(response.guessesLeft()).isEqualTo(guessesLeft);
         assertThat(response.gameStatus()).containsIgnoringCase(expectedStatus);
         assertThat(response.message()).containsIgnoringCase(message);
-        assertThat(response.isError()).isEqualTo(isError);
     }
 
     private PlayerDTO getHumanStatus(RestTestClient client) {

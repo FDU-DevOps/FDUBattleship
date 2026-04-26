@@ -129,18 +129,31 @@ async function submitAttack(row, col) {
 
     const response = await fetch(API_PATHS.attack, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        },
         body: JSON.stringify({ row, column: col })
     });
 
-    /** @type {AttackResponse} */
-    const data = await response.json();
+    const raw = await response.text();
+    let data;
+    try {
+        data = JSON.parse(raw);
+    } catch {
+        data = null;
+    }
 
-    if (data.isError) {
-        document.getElementById(ELEMENT_IDS.message).innerText = "Cell already attacked.";
+    // New backend behavior: errors come via HTTP status + ProblemDetail
+    if (!response.ok) {
+        const detail = data?.detail || `Request failed with status ${response.status}`;
+        document.getElementById(ELEMENT_IDS.message).innerText = detail;
+        document.getElementById(ELEMENT_IDS.computerMessage).innerText = "";
         return;
     }
 
+    // Success payload (AttackResponseDTO)
     updateComputerBoardCell(row, col, data.grid[row][col]);
 
     renderHumanBoard(data.homeGrid);
