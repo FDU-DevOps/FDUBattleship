@@ -9,6 +9,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      checks: write
+
     steps:
       # Check out the code from the branch
       - name: Checkout code
