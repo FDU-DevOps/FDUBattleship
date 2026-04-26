@@ -101,10 +101,8 @@
                 <linkXRef>false</linkXRef>
                 <checkstyleRules>
                     <module name="Checker">
-                        <module name="TreeWalker">
-                            <module name="LineLength">
-                                <property name="max" value="160"/>
-                            </module>
+                        <module name="LineLength">
+                            <property name="max" value="140"/>
                         </module>
                     </module>
                 </checkstyleRules>
