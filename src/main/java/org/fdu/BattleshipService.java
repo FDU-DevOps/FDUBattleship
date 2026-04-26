@@ -50,6 +50,13 @@ public class BattleshipService {
         log.debug("placeShip request: row={}, col={}, length={}, horizontal={}",
                 request.row(), request.col(), request.shipLength(), request.horizontal());
 
+        int placed = manager.getHumanDTO().homeShips().size();
+        int required = BattleshipManager.FLEET_LENGTHS[placed];
+
+        if (request.shipLength() != required) {
+            throw new IllegalArgumentException("Ship length does not match fleet order");
+        }
+
         boolean success = manager.placePlayerShip(
                 request.row(), request.col(),
                 request.shipLength(), request.horizontal()

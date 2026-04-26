@@ -28,7 +28,7 @@ public class BattleshipManager implements Serializable {
     // Total number of attacks the player is allowed before the game is lost
     private static final int MAX_GUESSES = 30;
 
-    private static final int[] FLEET_LENGTHS = {5, 4, 3, 3, 2};
+    static final int[] FLEET_LENGTHS = {5, 4, 3, 3, 2};
     private static final int TOTAL_SHIP_CELLS = Arrays.stream(FLEET_LENGTHS).sum(); // or computed from FLEET_LENGTHS
     private static final int MAX_SHIP_PLACEMENT_ATTEMPTS = 1000;
 
