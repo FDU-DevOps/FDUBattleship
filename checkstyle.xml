@@ -41,11 +41,6 @@
         <module name="SimplifyBooleanExpression"/>
         <module name="SimplifyBooleanReturn"/>
 
-        <!-- Whitespace -->
-        <module name="WhitespaceAround"/>
-        <module name="NoWhitespaceAtEndOfLine"/>
-        <module name="GenericWhitespace"/>
-
         <!-- Javadoc - only for public API -->
         <module name="MissingJavadocMethod">
             <property name="scope" value="public"/>
