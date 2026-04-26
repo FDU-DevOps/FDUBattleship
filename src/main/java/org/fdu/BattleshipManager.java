@@ -215,7 +215,7 @@ public class BattleshipManager implements Serializable {
             try {
                 blankGrid(grid);
                 List<Ship> allShips = new ArrayList<>();
-                for (int len : BattleshipManager.FLEET_LENGTHS) allShips.add(placeShip(grid, len));
+                for (int len : FLEET_LENGTHS) allShips.add(placeShip(grid, len));
                 return allShips; //(Returns once all ships placed successfully)
             } catch (RuntimeException e) {
                 log.trace("Impossible to place all ships, trying again...");
@@ -243,30 +243,30 @@ public class BattleshipManager implements Serializable {
                     ? (col + shipLength <= SIZE)
                     : (row + shipLength <= SIZE);
 
-            if (!fitsBounds) continue;
+            if (fitsBounds) {
+                boolean canPlace = true;
+                for (int i = 0; i < shipLength; i++) {
+                    int r = horizontal ? row : row + i;
+                    int c = horizontal ? col + i : col;
+                    if (grid[r][c] != Cell.WATER) {
+                        canPlace = false;
+                        break;
+                    }
+                }
 
-            boolean canPlace = true;
-            for (int i = 0; i < shipLength; i++) {
-                int r = horizontal ? row : row + i;
-                int c = horizontal ? col + i : col;
-                if (grid[r][c] != Cell.WATER) {
-                    canPlace = false;
-                    break;
+                if (canPlace) {
+                    List<int[]> cells = new ArrayList<>();
+                    for (int i = 0; i < shipLength; i++) {
+                        int r = horizontal ? row : row + i;
+                        int c = horizontal ? col + i : col;
+                        grid[r][c] = Cell.SHIP;
+                        cells.add(new int[]{r, c});
+                        log.trace("[RANDOM] Placing ship cell at: {}{}", (char) (COLUMN_LABEL_START + c), r + ROW_LABEL_OFFSET);
+                    }
+                    log.trace("[RANDOM] Ship of length {} placed", shipLength);
+                    return new Ship(cells);
                 }
             }
-
-            if (!canPlace) continue;
-
-            List<int[]> cells = new ArrayList<>();
-            for (int i = 0; i < shipLength; i++) {
-                int r = horizontal ? row : row + i;
-                int c = horizontal ? col + i : col;
-                grid[r][c] = Cell.SHIP;
-                cells.add(new int[]{r, c});
-                log.trace("[RANDOM] Placing ship cell at: {}{}", (char) (COLUMN_LABEL_START + c), (r + ROW_LABEL_OFFSET));
-            }
-            log.trace("[RANDOM] Ship of length {} placed", shipLength);
-            return new Ship(cells);
         }
 
         // tried ATTEMPTS times and failed
@@ -292,7 +292,7 @@ public class BattleshipManager implements Serializable {
             int r = isHorizontal ? startRow : startRow + i;
             int c = isHorizontal ? startCol + i : startCol;
             dto.grid()[r][c] = Cell.SHIP;
-            log.trace("[TEST] Placing ship cell at: {}{}", (char) (COLUMN_LABEL_START + c), (r + ROW_LABEL_OFFSET));
+            log.trace("[TEST] Placing ship cell at: {}{}", (char) (COLUMN_LABEL_START + c), r + ROW_LABEL_OFFSET);
         }
         log.trace("[TEST] Ship of length {} placed", shipLength);
     }
