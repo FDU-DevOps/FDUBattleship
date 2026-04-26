@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.NoSuchElementException;
+import java.util.Objects;
 
 /**
  * Stateless Spring service that orchestrates Battleship application use-cases.
@@ -104,6 +105,7 @@ public class BattleshipService {
             throw new IllegalStateException("Ships can only be placed during placement phase");
         }
 
+        assert manager.getHumanDTO().homeShips() != null;
         int placed = manager.getHumanDTO().homeShips().size();
         int required = BattleshipManager.FLEET_LENGTHS[placed];
 
@@ -282,7 +284,7 @@ public class BattleshipService {
      */
     private int[][] shipToCoords(Ship ship) {
         if (ship == null) return null;
-        return ship.cells().stream()
+        return Objects.requireNonNull(ship.cells()).stream()
                 .map(cell -> new int[]{cell[0], cell[1]})
                 .toArray(int[][]::new);
     }

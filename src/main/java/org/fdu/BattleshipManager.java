@@ -158,6 +158,7 @@ public class BattleshipManager implements Serializable {
         }
 
         // Add the new ship to the human's home ship list
+        assert humanDTO.homeShips() != null;
         List<Ship> homeShips = new ArrayList<>(humanDTO.homeShips());
         homeShips.add(new Ship(cells));
         humanDTO = new PlayerDTO(humanDTO.grid(), homeGrid, humanDTO.guessesLeft(),
@@ -301,11 +302,13 @@ public class BattleshipManager implements Serializable {
     // Getters / Setters
     // -------------------------------------------------------------------------
 
-    public PlayerDTO getHumanDTO()    { return humanDTO; }
-    public void setHumanDTO(PlayerDTO humanDTO) { this.humanDTO = humanDTO; }
 
-    public PlayerDTO getComputerDTO() { return computerDTO; }
-    public void setComputerDTO(PlayerDTO computerDTO) { this.computerDTO = computerDTO; }
-    public static int getBoardSize()  { return SIZE; }
+    public synchronized PlayerDTO getHumanDTO() { return humanDTO; }
+    public synchronized void setHumanDTO(PlayerDTO humanDTO) { this.humanDTO = humanDTO; }
+
+    public synchronized PlayerDTO getComputerDTO() { return computerDTO; }
+    public synchronized void setComputerDTO(PlayerDTO computerDTO) { this.computerDTO = computerDTO; }
+
+    public static int getBoardSize() { return SIZE; }
     public static int getMaxGuesses() { return MAX_GUESSES; }
 }
