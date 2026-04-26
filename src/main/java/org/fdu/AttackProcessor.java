@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -151,7 +150,7 @@ public class AttackProcessor implements Serializable {
     private Ship findSunkShip(List<Ship> ships, Cell[][] grid, int row, int col) {
         if (ships == null) return null;
         for (Ship ship : ships) {
-            for (int[] cellCoords : Objects.requireNonNull(ship.cells())) {
+            for (int[] cellCoords : ship.cells()) {
                 if (cellCoords[0] == row && cellCoords[1] == col) {
                     return ship.isSunk(grid) ? ship : null;
                 }

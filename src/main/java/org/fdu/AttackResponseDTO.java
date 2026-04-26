@@ -47,6 +47,7 @@ package org.fdu;
  * @param homeSunkCells   row/col pairs of every cell belonging to the player ship the
  *                        computer just sunk. Null when the computer did not sink a ship.
  */
+
 public record AttackResponseDTO(
         String[][] grid,
         String[][] homeGrid,
@@ -58,86 +59,4 @@ public record AttackResponseDTO(
         String computerMessage,
         int[][] sunkCells,
         int[][] homeSunkCells
-) {
-    public AttackResponseDTO {
-        grid = deepCopy(grid);
-        homeGrid = deepCopy(homeGrid);
-        sunkCells = deepCopy(sunkCells);
-        homeSunkCells = deepCopy(homeSunkCells);
-    }
-
-    /**
-     * Returns a deep copy of the player's tracking board, so callers cannot
-     * mutate internal state.
-     *
-     * @return a deep copy of {@code grid}, or {@code null} if {@code grid} is {@code null}
-     */
-    @Override
-    public String[][] grid() {
-        return deepCopy(grid);
-    }
-
-    /**
-     * Returns a deep copy of the player's home board, so callers cannot
-     * mutate internal state.
-     *
-     * @return a deep copy of {@code homeGrid}, or {@code null} if {@code homeGrid} is {@code null}
-     */
-    @Override
-    public String[][] homeGrid() {
-        return deepCopy(homeGrid);
-    }
-
-    /**
-     * Returns a deep copy of the sunk computer ship cells, so callers cannot
-     * mutate internal state.
-     *
-     * @return a deep copy of {@code sunkCells}, or {@code null} if no ship was sunk this turn
-     */
-    @Override
-    public int[][] sunkCells() {
-        return deepCopy(sunkCells);
-    }
-
-    /**
-     * Returns a deep copy of the sunk player ship cells, so callers cannot
-     * mutate internal state.
-     *
-     * @return a deep copy of {@code homeSunkCells}, or {@code null} if no ship was sunk this turn
-     */
-    @Override
-    public int[][] homeSunkCells() {
-        return deepCopy(homeSunkCells);
-    }
-
-
-    /**
-     * Creates a deep copy of a 2D {@link String} array, cloning each row individually.
-     *
-     * @param source the array to copy; may be {@code null}
-     * @return a deep copy of {@code source}, or {@code null} if {@code source} is {@code null}
-     */
-    private static String[][] deepCopy(String[][] source) {
-        if (source == null) return null;
-        String[][] copy = new String[source.length][];
-        for (int i = 0; i < source.length; i++) {
-            copy[i] = source[i] == null ? null : source[i].clone();
-        }
-        return copy;
-    }
-
-    /**
-     * Creates a deep copy of a 2D {@code int} array, cloning each row individually.
-     *
-     * @param source the array to copy; may be {@code null}
-     * @return a deep copy of {@code source}, or {@code null} if {@code source} is {@code null}
-     */
-    private static int[][] deepCopy(int[][] source) {
-        if (source == null) return null;
-        int[][] copy = new int[source.length][];
-        for (int i = 0; i < source.length; i++) {
-            copy[i] = source[i] == null ? null : source[i].clone();
-        }
-        return copy;
-    }
-}
+) {}
