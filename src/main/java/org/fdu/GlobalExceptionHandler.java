@@ -1,5 +1,6 @@
 package org.fdu;
 
+import jakarta.annotation.Nullable;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -11,6 +12,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.time.OffsetDateTime;
@@ -48,6 +52,7 @@ import java.util.NoSuchElementException;
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
     /**
      * Handles invalid request arguments and maps them to HTTP 400.
      * <p>
@@ -110,7 +115,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ProblemDetail> handleUnprocessable(
             IllegalStateException ex, HttpServletRequest request) {
         return buildProblem(
-                HttpStatus.UNPROCESSABLE_ENTITY,
+                HttpStatus.UNPROCESSABLE_CONTENT,
                 "Unprocessable Entity",
                 ex.getMessage(),
                 "/problems/unprocessable-entity",
@@ -134,10 +139,10 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
-            MethodArgumentNotValidException ex,
-            HttpHeaders headers,
-            HttpStatusCode status,
-            WebRequest request) {
+            @Nullable MethodArgumentNotValidException ex,
+            @Nullable HttpHeaders headers,
+            @Nullable HttpStatusCode status,
+            @Nullable WebRequest request) {
 
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
         problem.setType(URI.create("/problems/validation-failed"));
@@ -162,6 +167,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ProblemDetail> handleUnexpected(
             Exception ex, HttpServletRequest request) {
+
+        log.error("Unhandled exception at {}", request.getRequestURI(), ex);
         return buildProblem(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "Internal Server Error",

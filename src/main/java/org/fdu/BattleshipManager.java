@@ -263,9 +263,9 @@ public class BattleshipManager implements Serializable {
                 int c = horizontal ? col + i : col;
                 grid[r][c] = Cell.SHIP;
                 cells.add(new int[]{r, c});
-                log.trace("Placing ship cell at: {}{}", (char) (COLUMN_LABEL_START + c), (r + ROW_LABEL_OFFSET));
+                log.trace("[RANDOM] Placing ship cell at: {}{}", (char) (COLUMN_LABEL_START + c), (r + ROW_LABEL_OFFSET));
             }
-            log.trace("Ship of length {} placed", shipLength);
+            log.trace("[RANDOM] Ship of length {} placed", shipLength);
             return new Ship(cells);
         }
 
@@ -292,9 +292,9 @@ public class BattleshipManager implements Serializable {
             int r = isHorizontal ? startRow : startRow + i;
             int c = isHorizontal ? startCol + i : startCol;
             dto.grid()[r][c] = Cell.SHIP;
-            log.trace("Placing ship cell at: {}{}", (char) (COLUMN_LABEL_START + c), (r + ROW_LABEL_OFFSET));
+            log.trace("[TEST] Placing ship cell at: {}{}", (char) (COLUMN_LABEL_START + c), (r + ROW_LABEL_OFFSET));
         }
-        log.trace("Ship of length {} placed", shipLength);
+        log.trace("[TEST] Ship of length {} placed", shipLength);
     }
 
     // -------------------------------------------------------------------------

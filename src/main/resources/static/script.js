@@ -184,15 +184,21 @@ async function submitAttack(row, col) {
 
         // errors via HTTP status + ProblemDetail
         if (!response.ok) {
-            const detail = data?.detail || `Request failed with status ${response.status}`;
-            document.getElementById(ELEMENT_IDS.message).innerText = detail;
+            document.getElementById(ELEMENT_IDS.message).innerText =
+                data?.detail ?? `Request failed with status ${response.status}`;
             document.getElementById(ELEMENT_IDS.computerMessage).innerText = "";
             return;
         }
 
         // Render full board state from response
-        renderBoard(BOARD_IDS.computer, data.grid);
-        renderBoard(BOARD_IDS.human, data.homeGrid);
+        if (!data) {
+            document.getElementById(ELEMENT_IDS.message).innerText = "Empty response from server.";
+            document.getElementById(ELEMENT_IDS.computerMessage).innerText = "";
+            return;
+        }
+
+        renderBoard(BOARD_IDS.computer, data.grid ?? []);
+        renderBoard(BOARD_IDS.human, data.homeGrid ?? []);
 
         if (data.computerRow !== NO_COORD) {
             highlightLastComputerMove(data.computerRow, data.computerCol);
@@ -298,7 +304,7 @@ async function placeShipAtCell(row, col) {
             })
         });
 
-        let data = null;
+        let data;
         try {
             data = await response.json();
         } catch {
@@ -306,12 +312,17 @@ async function placeShipAtCell(row, col) {
         }
 
         if (!response.ok) {
-            const detail = data?.detail || `Request failed with status ${response.status}`;
-            document.getElementById(ELEMENT_IDS.computerMessage).innerText = detail;
+            document.getElementById(ELEMENT_IDS.computerMessage).innerText =
+                data?.detail ?? `Request failed with status ${response.status}`;
             return;
         }
 
-        renderBoard(BOARD_IDS.human, data.homeGrid);
+        if (!data) {
+            document.getElementById(ELEMENT_IDS.computerMessage).innerText = "Empty response from server.";
+            return;
+        }
+
+        renderBoard(BOARD_IDS.human, data.homeGrid ?? []);
         document.getElementById(ELEMENT_IDS.computerMessage).innerText = "";
         placementIndex++;
 
