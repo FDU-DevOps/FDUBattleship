@@ -92,15 +92,24 @@
       </plugin>
 
       <!-- Checkstyle Check -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>3.6.0</version>
-        <configuration>
-          <failsOnError>false</failsOnError>
-          <linkXRef>false</linkXRef>
-        </configuration>
-      </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-checkstyle-plugin</artifactId>
+            <version>3.6.0</version>
+            <configuration>
+                <failsOnError>false</failsOnError>
+                <linkXRef>false</linkXRef>
+                <checkstyleRules>
+                    <module name="Checker">
+                        <module name="TreeWalker">
+                            <module name="LineLength">
+                                <property name="max" value="160"/>
+                            </module>
+                        </module>
+                    </module>
+                </checkstyleRules>
+            </configuration>
+        </plugin>
 
       <!-- SpotBugs Check -->
       <plugin>

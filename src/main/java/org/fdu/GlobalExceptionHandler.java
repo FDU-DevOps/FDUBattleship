@@ -23,50 +23,53 @@ import java.util.NoSuchElementException;
 /**
  * Centralized REST exception mapper for the Battleship API.
  * <p>
- * This component is responsible for converting Java exceptions thrown by
- * controllers/services into standardized HTTP error responses using
- * {@link ProblemDetail}. By handling failures in one place, controllers remain
- * focused on happy-path request orchestration while error semantics stay
- * consistent across all endpoints.
+ * Converts Java exceptions thrown by controllers/services into
+ * standardized HTTP error responses using {@link ProblemDetail}.
+ * By handling failures in one place, controllers remain focused on
+ * happy-path orchestration while error semantics stay consistent.
  * </p>
  * <p>
  * Status-code strategy:
  * </p>
  * <ul>
- *   <li><b>400 Bad Request</b> for malformed/invalid client input</li>
- *   <li><b>404 Not Found</b> when a required game/session resource does not exist</li>
- *   <li><b>422 Unprocessable Entity</b> for logically invalid game actions</li>
- *   <li><b>500 Internal Server Error</b> for unexpected server-side failures</li>
+ *   <li><b>400 Bad Request</b>, malformed/invalid client input</li>
+ *   <li><b>404 Not Found</b>, required resource does not exist</li>
+ *   <li><b>422 Unprocessable Entity</b>, invalid game actions</li>
+ *   <li><b>500 Internal Server Error</b>, unexpected failures</li>
  * </ul>
  * <p>
- * Every mapped response includes common ProblemDetail fields ({@code type},
- * {@code title}, {@code status}, {@code detail}, {@code instance}) plus a
- * custom {@code timestamp} property to improve observability in production logs.
+ * Every mapped response includes common ProblemDetail fields plus
+ * a custom {@code timestamp} property for production observability.
  * </p>
  * <p>
- * Extends {@link ResponseEntityExceptionHandler} to integrate with Spring MVC's
- * built-in exception resolution flow and to override framework-level validation
- * handling in a consistent format.
+ * Extends {@link ResponseEntityExceptionHandler} to integrate with
+ * Spring MVC's built-in exception resolution flow.
  * </p>
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
     /**
-     * Handles invalid request arguments and maps them to HTTP 400.
+     * Logger for this class.
+     */
+    private static final Logger LOG =
+            LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    /**
+     * Handles invalid request arguments, maps to HTTP 400.
      * <p>
-     * Typical examples include out-of-range coordinates or other input values
-     * that fail service-level argument checks.
+     * Typical examples include out-of-range coordinates or other input
+     * values that fail service-level argument checks.
      * </p>
      *
      * @param ex      thrown {@link IllegalArgumentException}
      * @param request current HTTP servlet request
-     * @return {@link ResponseEntity} containing a {@link ProblemDetail} body with status 400
+     * @return {@link ResponseEntity} with {@link ProblemDetail}, status 400
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ProblemDetail> handleBadRequest(
-            IllegalArgumentException ex, HttpServletRequest request) {
+            final IllegalArgumentException ex,
+            final HttpServletRequest request) {
         return buildProblem(
                 HttpStatus.BAD_REQUEST,
                 "Bad Request",
@@ -77,19 +80,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * Handles missing resources and maps them to HTTP 404.
+     * Handles missing resources, maps to HTTP 404.
      * <p>
-     * In this project, this commonly indicates that no active game/session
-     * resource exists for the current request context.
+     * Commonly indicates that no active game/session resource exists
+     * for the current request context.
      * </p>
      *
      * @param ex      thrown {@link NoSuchElementException}
      * @param request current HTTP servlet request
-     * @return {@link ResponseEntity} containing a {@link ProblemDetail} body with status 404
+     * @return {@link ResponseEntity} with {@link ProblemDetail}, status 404
      */
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<ProblemDetail> handleNotFound(
-            NoSuchElementException ex, HttpServletRequest request) {
+            final NoSuchElementException ex,
+            final HttpServletRequest request) {
         return buildProblem(
                 HttpStatus.NOT_FOUND,
                 "Resource Not Found",
@@ -100,20 +104,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * Handles state/rule violations and maps them to HTTP 422.
+     * Handles state/rule violations, maps to HTTP 422.
      * <p>
-     * Used when input is syntactically valid but action is not allowed by
-     * current domain state (e.g., attacking an already attacked cell,
-     * placing a ship illegally, or acting on a finished game).
+     * Used when input is syntactically valid but the action is not
+     * allowed by the current domain state (e.g., attacking an already
+     * attacked cell, placing a ship illegally, acting on finished game).
      * </p>
      *
      * @param ex      thrown {@link IllegalStateException}
      * @param request current HTTP servlet request
-     * @return {@link ResponseEntity} containing a {@link ProblemDetail} body with status 422
+     * @return {@link ResponseEntity} with {@link ProblemDetail}, status 422
      */
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ProblemDetail> handleUnprocessable(
-            IllegalStateException ex, HttpServletRequest request) {
+            final IllegalStateException ex,
+            final HttpServletRequest request) {
         return buildProblem(
                 HttpStatus.UNPROCESSABLE_CONTENT,
                 "Unprocessable Entity",
@@ -124,51 +129,55 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * Handles framework-level bean validation failures and maps them to HTTP 400.
+     * Handles bean validation failures, maps to HTTP 400.
      * <p>
-     * This method is invoked by Spring MVC when request-body validation fails
-     * during argument binding (for example when using {@code @Valid} and
-     * validation annotations on DTO fields).
+     * Invoked by Spring MVC when request-body validation fails during
+     * argument binding (e.g., when using {@code @Valid} on DTO fields).
      * </p>
      *
      * @param ex      thrown {@link MethodArgumentNotValidException}
      * @param headers response headers prepared by Spring
      * @param status  suggested HTTP status from framework
      * @param request current web request context
-     * @return {@link ResponseEntity} containing a {@link ProblemDetail} body with status 400
+     * @return {@link ResponseEntity} with {@link ProblemDetail}, status 400
      */
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
-            @Nullable MethodArgumentNotValidException ex,
-            @Nullable HttpHeaders headers,
-            @Nullable HttpStatusCode status,
-            @Nullable WebRequest request) {
+            @Nullable final MethodArgumentNotValidException ex,
+            @Nullable final HttpHeaders headers,
+            @Nullable final HttpStatusCode status,
+            @Nullable final WebRequest request) {
 
-        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        final ProblemDetail problem =
+                ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
         problem.setType(URI.create("/problems/validation-failed"));
         problem.setTitle("Validation Failed");
         problem.setDetail("Request validation failed");
-        problem.setProperty("timestamp", OffsetDateTime.now().toString());
+        problem.setProperty(
+                "timestamp", OffsetDateTime.now().toString());
 
         return ResponseEntity.badRequest().body(problem);
     }
 
     /**
-     * Catch-all fallback for unexpected exceptions.
+     * Catch-all fallback for unexpected exceptions, maps to HTTP 500.
      * <p>
-     * Ensures unhandled failures still return a consistent error contract
-     * instead of leaking stack traces or container-generated HTML error pages.
+     * Ensures unhandled failures return a consistent error contract
+     * instead of leaking stack traces or HTML error pages.
      * </p>
      *
      * @param ex      unexpected exception
      * @param request current HTTP servlet request
-     * @return {@link ResponseEntity} containing a {@link ProblemDetail} body with status 500
+     * @return {@link ResponseEntity} with {@link ProblemDetail}, status 500
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ProblemDetail> handleUnexpected(
-            Exception ex, HttpServletRequest request) {
+            final Exception ex,
+            final HttpServletRequest request) {
 
-        log.error("Unhandled exception at {}", request.getRequestURI(), ex);
+        LOG.error(
+                "Unhandled exception at {}",
+                request.getRequestURI(), ex);
         return buildProblem(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "Internal Server Error",
@@ -181,29 +190,31 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     /**
      * Builds a standardized {@link ProblemDetail} payload.
      * <p>
-     * Populates the canonical ProblemDetail fields and appends a custom
+     * Populates canonical ProblemDetail fields and appends a custom
      * {@code timestamp} property for diagnostics and log correlation.
      * </p>
      *
      * @param status       HTTP status to return
      * @param title        short human-readable error title
      * @param detail       detailed message explaining the failure
-     * @param type         URI-like identifier for error category
+     * @param type         URI-like identifier for the error category
      * @param instancePath request URI that produced the error
-     * @return response entity containing the completed ProblemDetail payload
+     * @return response entity containing the completed ProblemDetail
      */
     private ResponseEntity<ProblemDetail> buildProblem(
-            HttpStatus status,
-            String title,
-            String detail,
-            String type,
-            String instancePath) {
+            final HttpStatus status,
+            final String title,
+            final String detail,
+            final String type,
+            final String instancePath) {
 
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
+        final ProblemDetail problem =
+                ProblemDetail.forStatusAndDetail(status, detail);
         problem.setTitle(title);
         problem.setType(URI.create(type));
         problem.setInstance(URI.create(instancePath));
-        problem.setProperty("timestamp", OffsetDateTime.now().toString());
+        problem.setProperty(
+                "timestamp", OffsetDateTime.now().toString());
 
         return ResponseEntity.status(status).body(problem);
     }

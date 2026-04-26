@@ -3,7 +3,8 @@ package org.fdu;
 import java.io.Serializable;
 
 /**
- * Immutable result of one full game turn (player attack + computer retaliation).
+ * Immutable result of one full game turn
+ * (player attack + computer retaliation).
  * <p>
  * Replaces the {@code PlayerDTO[]} array previously returned by
  * {@link AttackProcessor#processAttack}, eliminating the four mutable fields
@@ -18,9 +19,12 @@ import java.io.Serializable;
  *                        or {@code null} if no ship was sunk
  * @param homeSunkShip    the player ship sunk by the computer this turn,
  *                        or {@code null} if no ship was sunk
- * @param computerRow     row index (0-9) of the computer's attack this turn,
- *                        or {@code -1} if the computer did not fire (player won)
- * @param computerCol     column index (0-9) of the computer's attack this turn,
+ * @param computerRow     row index (0-9) of
+ *                        the computer's attack this turn,
+ *                        or {@code -1} if the computer did
+ *                        not fire (player won)
+ * @param computerCol     column index (0-9) of the computer's
+ *                        attack this turn,
  *                        or {@code -1} if the computer did not fire (player won)
  */
 public record TurnResultDTO(
@@ -30,5 +34,5 @@ public record TurnResultDTO(
         Ship homeSunkShip,
         int computerRow,
         int computerCol
-) implements Serializable {}
+) implements Serializable { }
 

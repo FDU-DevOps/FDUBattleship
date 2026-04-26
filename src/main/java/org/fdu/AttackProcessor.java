@@ -13,11 +13,13 @@ import java.util.concurrent.ThreadLocalRandom;
  * <p>
  * Receives the player's guess coordinates along with both {@link PlayerDTO}
  * instances, resolves whether the attack is a HIT, MISS, or ship-sunk event,
- * fires the computer's random counter-attack, and returns a {@link TurnResultDTO}
+ * fires the computer's random counter-attack,
+ * and returns a {@link TurnResultDTO}
  * carrying all updated state and metadata for the turn.
  * </p>
  * <p>
- * This class holds no mutable fields. Every piece of per-turn data
+ * This class holds no mutable fields.
+ * Every piece of per-turn data
  * (sunk ships, computer move coordinates) is returned inside {@link TurnResultDTO}
  * rather than stored as instance state, making this class safe to use as a
  * Spring singleton.
