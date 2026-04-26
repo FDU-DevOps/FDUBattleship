@@ -21,7 +21,7 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class BattleshipManager implements Serializable {
 
-    private static final Logger log = LoggerFactory.getLogger(BattleshipManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BattleshipManager.class);
 
     // Fixed board dimension, both axes are 10x10 throughout the entire game
     private static final int SIZE = 10;
@@ -48,13 +48,25 @@ public class BattleshipManager implements Serializable {
      * with full guess count and IN_PROGRESS status.
      * </p>
      */
-    public BattleshipManager() { initializePlacementPhase(); }
+    public BattleshipManager() {
+        initializePlacementPhase();
+    }
 
     /**
-     * Per-session turn, rechecks tracking because race conditions:
-     * If already hit, returns immediately and don't let computer move
-     * Otherwise it delegates to the provided AttackProcessor, persists the
-     * returned DTOs, and returns the TurnResultDTO.
+     * Processes a single player turn in a thread-safe manner.
+     * <p>
+     * Rechecks the tracking grid before delegating to avoid processing
+     * duplicate attacks caused by race conditions. If the cell at the given
+     * coordinates was already attacked, returns the current state unchanged
+     * without triggering a computer counter-attack.
+     * </p>
+     *
+     * @param row       row index of the player's attack (0-9)
+     * @param col       column index of the player's attack (0-9)
+     * @param processor stateless {@link AttackProcessor} that resolves the turn
+     * @return {@link TurnResultDTO} containing updated player and computer state,
+     *         sunk ship references, and the computer's move coordinates,
+     *         or unchanged state if no game is active or cell was already attacked
      */
     public synchronized TurnResultDTO performTurn(int row, int col, AttackProcessor processor) {
         // if no game started
@@ -139,13 +151,17 @@ public class BattleshipManager implements Serializable {
         boolean fits = horizontal
                 ? (col + shipLength <= SIZE)
                 : (row + shipLength <= SIZE);
-        if (!fits) return false;
+        if (!fits) {
+            return false;
+        }
 
         // --- Overlap check ---
         for (int i = 0; i < shipLength; i++) {
             int r = horizontal ? row : row + i;
             int c = horizontal ? col + i : col;
-            if (homeGrid[r][c] != Cell.WATER) return false;
+            if (homeGrid[r][c] != Cell.WATER) {
+                return false;
+            }
         }
 
         // --- Place ship ---
@@ -173,9 +189,13 @@ public class BattleshipManager implements Serializable {
      */
     public boolean isPlacementComplete() {
         int shipCells = 0;
-        for (Cell[] row : humanDTO.homeGrid())
-            for (Cell c : row)
-                if (c == Cell.SHIP) shipCells++;
+        for (Cell[] row : humanDTO.homeGrid()) {
+            for (Cell c : row) {
+                if (c == Cell.SHIP) {
+                    shipCells++;
+                }
+            }
+        }
         return shipCells == TOTAL_SHIP_CELLS;
     }
 
@@ -193,7 +213,9 @@ public class BattleshipManager implements Serializable {
         if (grid == null) {
             grid = new Cell[SIZE][SIZE];
         }
-        for (Cell[] row : grid) Arrays.fill(row, Cell.WATER);
+        for (Cell[] row : grid) {
+            Arrays.fill(row, Cell.WATER);
+        }
         return grid;
     }
 
@@ -215,10 +237,12 @@ public class BattleshipManager implements Serializable {
             try {
                 blankGrid(grid);
                 List<Ship> allShips = new ArrayList<>();
-                for (int len : FLEET_LENGTHS) allShips.add(placeShip(grid, len));
+                for (int len : FLEET_LENGTHS) {
+                    allShips.add(placeShip(grid, len));
+                }
                 return allShips; //(Returns once all ships placed successfully)
             } catch (RuntimeException e) {
-                log.trace("Impossible to place all ships, trying again...");
+                LOG.trace("Impossible to place all ships, trying again...");
             }
         }
     }
@@ -261,9 +285,9 @@ public class BattleshipManager implements Serializable {
                         int c = horizontal ? col + i : col;
                         grid[r][c] = Cell.SHIP;
                         cells.add(new int[]{r, c});
-                        log.trace("[RANDOM] Placing ship cell at: {}{}", (char) (COLUMN_LABEL_START + c), r + ROW_LABEL_OFFSET);
+                        LOG.trace("[RANDOM] Placing ship cell at: {}{}", (char) (COLUMN_LABEL_START + c), r + ROW_LABEL_OFFSET);
                     }
-                    log.trace("[RANDOM] Ship of length {} placed", shipLength);
+                    LOG.trace("[RANDOM] Ship of length {} placed", shipLength);
                     return new Ship(cells);
                 }
             }
@@ -279,8 +303,10 @@ public class BattleshipManager implements Serializable {
 
     /** Fills every cell of the DTO's primary grid with WATER. */
     void clearGrid(PlayerDTO dto) {
-        for (Cell[] row : dto.grid()) Arrays.fill(row, Cell.WATER);
-        log.trace("Board cleared of all ships");
+        for (Cell[] row : dto.grid()) {
+            Arrays.fill(row, Cell.WATER);
+        }
+        LOG.trace("Board cleared of all ships");
     }
 
     /**
@@ -292,20 +318,36 @@ public class BattleshipManager implements Serializable {
             int r = isHorizontal ? startRow : startRow + i;
             int c = isHorizontal ? startCol + i : startCol;
             dto.grid()[r][c] = Cell.SHIP;
-            log.trace("[TEST] Placing ship cell at: {}{}", (char) (COLUMN_LABEL_START + c), r + ROW_LABEL_OFFSET);
+            LOG.trace("[TEST] Placing ship cell at: {}{}", (char) (COLUMN_LABEL_START + c), r + ROW_LABEL_OFFSET);
         }
-        log.trace("[TEST] Ship of length {} placed", shipLength);
+        LOG.trace("[TEST] Ship of length {} placed", shipLength);
     }
 
     // -------------------------------------------------------------------------
     // Getters / Setters
     // -------------------------------------------------------------------------
 
-    public PlayerDTO getHumanDTO()    { return humanDTO; }
-    public void setHumanDTO(PlayerDTO humanDTO) { this.humanDTO = humanDTO; }
+    public PlayerDTO getHumanDTO()    {
+        return humanDTO;
+    }
 
-    public PlayerDTO getComputerDTO() { return computerDTO; }
-    public void setComputerDTO(PlayerDTO computerDTO) { this.computerDTO = computerDTO; }
-    public static int getBoardSize()  { return SIZE; }
-    public static int getMaxGuesses() { return MAX_GUESSES; }
+    public void setHumanDTO(PlayerDTO humanDTO) {
+        this.humanDTO = humanDTO;
+    }
+
+    public PlayerDTO getComputerDTO() {
+        return computerDTO;
+    }
+
+    public void setComputerDTO(PlayerDTO computerDTO) {
+        this.computerDTO = computerDTO;
+    }
+
+    public static int getBoardSize()  {
+        return SIZE;
+    }
+
+    public static int getMaxGuesses() {
+        return MAX_GUESSES;
+    }
 }

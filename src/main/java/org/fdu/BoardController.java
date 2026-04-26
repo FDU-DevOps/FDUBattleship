@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/battleship")
 public class BoardController {
 
-    private static final Logger log = LoggerFactory.getLogger(BoardController.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BoardController.class);
 
     private final BattleshipService battleshipService;
 
@@ -50,11 +50,11 @@ public class BoardController {
      */
     @PostMapping("/start-game")
     public ResponseEntity<Integer> startGame(HttpSession session) {
-        log.debug("POST /api/battleship/start-game");
+        LOG.debug("POST /api/battleship/start-game");
         BattleshipManager manager = getOrCreateManager(session);
         int guessesLeft = battleshipService.startGame(manager);
         session.setAttribute("game", manager);
-        log.debug("Game stored in session. guessesLeft={}", guessesLeft);
+        LOG.debug("Game stored in session. guessesLeft={}", guessesLeft);
         return ResponseEntity.ok(guessesLeft);
     }
 
@@ -66,7 +66,7 @@ public class BoardController {
      */
     @PostMapping("/placement-start")
     public ResponseEntity<String[][]> placementStart(HttpSession session) {
-        log.debug("POST /api/battleship/placement-start");
+        LOG.debug("POST /api/battleship/placement-start");
         BattleshipManager manager = new BattleshipManager();
         session.setAttribute("game", manager);
         return ResponseEntity.ok(battleshipService.startPlacement(manager));
@@ -81,7 +81,7 @@ public class BoardController {
      */
     @PostMapping("/place-ship")
     public ResponseEntity<AttackResponseDTO> placeShip(@RequestBody PlaceShipRequestDTO request, HttpSession session) {
-        log.debug("POST /api/battleship/place-ship row={}, col={}, len={}, horizontal={}",
+        LOG.debug("POST /api/battleship/place-ship row={}, col={}, len={}, horizontal={}",
                 request.row(), request.col(), request.shipLength(), request.horizontal());
         BattleshipManager manager = (BattleshipManager) session.getAttribute("game");
         AttackResponseDTO response = battleshipService.placeShip(request, manager);
@@ -99,7 +99,7 @@ public class BoardController {
      */
     @PostMapping("/attack")
     public ResponseEntity<AttackResponseDTO> attack(@RequestBody AttackRequestDTO request, HttpSession session) {
-        log.debug("POST /api/battleship/attack row={}, col={}", request.row(), request.column());
+        LOG.debug("POST /api/battleship/attack row={}, col={}", request.row(), request.column());
         BattleshipManager manager = (BattleshipManager) session.getAttribute("game");
         AttackResponseDTO response = battleshipService.processAttack(request, manager);
         session.setAttribute("game", manager);
@@ -129,7 +129,7 @@ public class BoardController {
     private BattleshipManager getOrCreateManager(HttpSession session) {
         BattleshipManager manager = (BattleshipManager) session.getAttribute("game");
         if (manager == null) {
-            log.debug("No manager in session. Creating new BattleshipManager.");
+            LOG.debug("No manager in session. Creating new BattleshipManager.");
             manager = new BattleshipManager();
         }
         return manager;
@@ -161,6 +161,4 @@ public class BoardController {
         }
         return masked;
     }
-
-
 }

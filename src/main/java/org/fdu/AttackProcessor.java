@@ -27,7 +27,7 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class AttackProcessor implements Serializable {
 
-    private static final Logger log = LoggerFactory.getLogger(AttackProcessor.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AttackProcessor.class);
 
     /**
      * Processes a single attack from the player against the computer's board,
@@ -47,7 +47,7 @@ public class AttackProcessor implements Serializable {
      *         and the computer's move coordinates
      */
     public TurnResultDTO processAttack(int row, int col, PlayerDTO humanDTO, PlayerDTO computerDTO) {
-        log.debug("Processing turn. Player attacks row={}, col={}", row, col);
+        LOG.debug("Processing turn. Player attacks row={}, col={}", row, col);
 
         // Deep-copy all grids so incoming DTOs remain immutable
         Cell[][] newShipGrid = copyGrid(computerDTO.grid());
@@ -64,27 +64,27 @@ public class AttackProcessor implements Serializable {
             newShipGrid[row][col] = Cell.HIT;
             newTrackingGrid[row][col] = Cell.HIT;
             sunkShip = findSunkShip(computerDTO.ships(), newShipGrid, row, col);
-            log.debug("Player HIT at ({}, {})", row, col);
+            LOG.debug("Player HIT at ({}, {})", row, col);
             if (sunkShip != null) {
-                log.info("Player sunk computer ship of size {}", sunkShip.size());
+                LOG.info("Player sunk computer ship of size {}", sunkShip.size());
             }
         } else {
             newShipGrid[row][col] = Cell.MISS;
             newTrackingGrid[row][col] = Cell.MISS;
-            log.debug("Player MISS at ({}, {})", row, col);
+            LOG.debug("Player MISS at ({}, {})", row, col);
         }
 
         int guessesLeft = (target == Cell.SHIP)
                 ? humanDTO.guessesLeft()
                 : humanDTO.guessesLeft() - 1;
 
-        log.debug("Guesses left after player's move: {}", guessesLeft);
+        LOG.debug("Guesses left after player's move: {}", guessesLeft);
 
         // ----------------------------------------------------------------
         // Check if the player just won or ran out of guesses
         // ----------------------------------------------------------------
         if (allShipsSunk(newShipGrid)) {
-            log.info("Player wins! All computer ships sunk.");
+            LOG.info("Player wins! All computer ships sunk.");
             PlayerDTO updatedHuman = new PlayerDTO(newTrackingGrid, newHomeGrid, guessesLeft,
                     GameStatus.WIN, humanDTO.ships(), humanDTO.homeShips());
             PlayerDTO updatedComputer = new PlayerDTO(newShipGrid, null, 0,
@@ -93,7 +93,7 @@ public class AttackProcessor implements Serializable {
         }
 
         if (guessesLeft <= 0) {
-            log.info("Computer wins! Player ran out of guesses.");
+            LOG.info("Computer wins! Player ran out of guesses.");
             PlayerDTO updatedHuman = new PlayerDTO(newTrackingGrid, newHomeGrid, 0,
                     GameStatus.LOSS, humanDTO.ships(), humanDTO.homeShips());
             PlayerDTO updatedComputer = new PlayerDTO(newShipGrid, null, 0,
@@ -114,13 +114,13 @@ public class AttackProcessor implements Serializable {
         if (homeTarget == Cell.SHIP) {
             newHomeGrid[computerRow][computerCol] = Cell.HIT;
             homeSunkShip = findSunkShip(humanDTO.homeShips(), newHomeGrid, computerRow, computerCol);
-            log.debug("Computer HIT at ({}, {})", computerRow, computerCol);
+            LOG.debug("Computer HIT at ({}, {})", computerRow, computerCol);
             if (homeSunkShip != null) {
-                log.info("Computer sunk player ship of size {}", homeSunkShip.size());
+                LOG.info("Computer sunk player ship of size {}", homeSunkShip.size());
             }
         } else {
             newHomeGrid[computerRow][computerCol] = Cell.MISS;
-            log.debug("Computer MISS at ({}, {})", computerRow, computerCol);
+            LOG.debug("Computer MISS at ({}, {})", computerRow, computerCol);
         }
 
         // ----------------------------------------------------------------
@@ -130,7 +130,7 @@ public class AttackProcessor implements Serializable {
         GameStatus humanStatus = computerWon ? GameStatus.LOSS : GameStatus.IN_PROGRESS;
 
         if (computerWon) {
-            log.info("Computer wins! All player ships sunk.");
+            LOG.info("Computer wins! All player ships sunk.");
         }
 
         PlayerDTO updatedHuman = new PlayerDTO(newTrackingGrid, newHomeGrid, guessesLeft,
@@ -150,7 +150,9 @@ public class AttackProcessor implements Serializable {
      * whether that specific ship is now fully sunk on the given grid.
      */
     private Ship findSunkShip(List<Ship> ships, Cell[][] grid, int row, int col) {
-        if (ships == null) return null;
+        if (ships == null) {
+            return null;
+        }
         for (Ship ship : ships) {
             for (int[] cellCoords : ship.cells()) {
                 if (cellCoords[0] == row && cellCoords[1] == col) {
@@ -178,9 +180,13 @@ public class AttackProcessor implements Serializable {
      * meaning all ships have been sunk.
      */
     private boolean allShipsSunk(Cell[][] grid) {
-        for (Cell[] row : grid)
-            for (Cell c : row)
-                if (c == Cell.SHIP) return false;
+        for (Cell[] row : grid) {
+            for (Cell c : row) {
+                if (c == Cell.SHIP) {
+                    return false;
+                }
+            }
+        }
         return true;
     }
 
@@ -193,10 +199,13 @@ public class AttackProcessor implements Serializable {
      */
     private int[] pickRandomUnattackedCell(Cell[][] grid) {
         List<int[]> available = new ArrayList<>();
-        for (int r = 0; r < grid.length; r++)
-            for (int c = 0; c < grid[r].length; c++)
-                if (grid[r][c] != Cell.HIT && grid[r][c] != Cell.MISS)
+        for (int r = 0; r < grid.length; r++) {
+            for (int c = 0; c < grid[r].length; c++) {
+                if (grid[r][c] != Cell.HIT && grid[r][c] != Cell.MISS) {
                     available.add(new int[]{r, c});
+                }
+            }
+        }
         return available.get(ThreadLocalRandom.current().nextInt(available.size()));
     }
 }

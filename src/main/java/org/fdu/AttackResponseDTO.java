@@ -59,4 +59,4 @@ public record AttackResponseDTO(
         String computerMessage,
         int[][] sunkCells,
         int[][] homeSunkCells
-) {}
+) { }

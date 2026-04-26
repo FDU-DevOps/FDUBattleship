@@ -20,11 +20,15 @@ public record Ship(List<int[]> cells) implements Serializable {
      */
     public boolean isSunk(Cell[][] grid) {
         for (int[] cell : cells) {
-            if (grid[cell[0]][cell[1]] != Cell.HIT) return false;
+            if (grid[cell[0]][cell[1]] != Cell.HIT) {
+                return false;
+            }
         }
         return true;
     }
 
     /** Number of cells this ship occupies. */
-    public int size() { return cells.size(); }
+    public int size() {
+        return cells.size();
+    }
 }

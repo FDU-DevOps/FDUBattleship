@@ -25,7 +25,7 @@ import java.util.NoSuchElementException;
 @Service
 public class BattleshipService {
 
-    private static final Logger log = LoggerFactory.getLogger(BattleshipService.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BattleshipService.class);
 
     private static final int NO_COORD = -1;
     private static final int MIN_INDEX = 0;
@@ -44,19 +44,19 @@ public class BattleshipService {
      * @return current number of guesses available to the player
      */
     public int startGame(BattleshipManager manager) {
-        log.debug("startGame called");
+        LOG.debug("startGame called");
         if (manager.getHumanDTO() == null || !manager.isPlacementComplete()) {
-            log.debug("Initializing random game");
+            LOG.debug("Initializing random game");
             manager.initializeGame();
         } else {
-            log.debug("Using manually placed ships, switching status to IN_PROGRESS");
+            LOG.debug("Using manually placed ships, switching status to IN_PROGRESS");
             PlayerDTO human = manager.getHumanDTO();
             manager.setHumanDTO(new PlayerDTO(
                     human.grid(), human.homeGrid(), BattleshipManager.getMaxGuesses(),
                     GameStatus.IN_PROGRESS, human.ships(), human.homeShips()
             ));
         }
-        log.info("Game started with {} guesses", manager.getHumanDTO().guessesLeft());
+        LOG.info("Game started with {} guesses", manager.getHumanDTO().guessesLeft());
         return manager.getHumanDTO().guessesLeft();
     }
 
@@ -71,7 +71,7 @@ public class BattleshipService {
      * @return lowercase string representation of the player's home grid
      */
     public String[][] startPlacement(BattleshipManager manager) {
-        log.debug("startPlacement called");
+        LOG.debug("startPlacement called");
         manager.initializePlacementPhase();
         return convertGrid(manager.getHumanDTO().homeGrid());
     }
@@ -93,11 +93,11 @@ public class BattleshipService {
      */
     public AttackResponseDTO placeShip(PlaceShipRequestDTO request, BattleshipManager manager) {
         if (manager == null) {
-            log.warn("placeShip called without active session");
+            LOG.warn("placeShip called without active session");
             throw new NoSuchElementException("No active game session found");
         }
 
-        log.debug("placeShip request: row={}, col={}, length={}, horizontal={}",
+        LOG.debug("placeShip request: row={}, col={}, length={}, horizontal={}",
                 request.row(), request.col(), request.shipLength(), request.horizontal());
 
         if (manager.getHumanDTO().gameStatus() != GameStatus.PLACEMENT) {
@@ -125,7 +125,7 @@ public class BattleshipService {
         String status = allPlaced ? GameStatus.IN_PROGRESS.name() : GameStatus.PLACEMENT.name();
 
         if (allPlaced) {
-            log.info("All player ships placed. Game ready.");
+            LOG.info("All player ships placed. Game ready.");
         }
 
         return new AttackResponseDTO(
@@ -151,7 +151,7 @@ public class BattleshipService {
      */
     public AttackResponseDTO processAttack(AttackRequestDTO request, BattleshipManager manager) {
         if (manager == null) {
-            log.warn("processAttack called without active session");
+            LOG.warn("processAttack called without active session");
             throw new NoSuchElementException("No active game session found");
         }
 
@@ -159,7 +159,7 @@ public class BattleshipService {
         int col = request.column();
         PlayerDTO human = manager.getHumanDTO();
 
-        log.debug("processAttack request: row={}, col={}", row, col);
+        LOG.debug("processAttack request: row={}, col={}", row, col);
 
         if (row < MIN_INDEX || row >= BattleshipManager.getBoardSize()
                 || col < MIN_INDEX || col >= BattleshipManager.getBoardSize()) {
@@ -185,14 +185,14 @@ public class BattleshipService {
         String playerMessage = buildPlayerMessage(turn, row, col);
         String computerMessage = buildComputerMessage(turn);
 
-        log.debug("Turn completed. guessesLeft={}, status={}",
+        LOG.debug("Turn completed. guessesLeft={}, status={}",
                 turn.updatedHuman().guessesLeft(),
                 turn.updatedHuman().gameStatus());
 
         if (turn.updatedHuman().gameStatus() == GameStatus.WIN) {
-            log.info("Game ended: player WIN");
+            LOG.info("Game ended: player WIN");
         } else if (turn.updatedHuman().gameStatus() == GameStatus.LOSS) {
-            log.info("Game ended: player LOSS");
+            LOG.info("Game ended: player LOSS");
         }
 
         return new AttackResponseDTO(
@@ -268,9 +268,11 @@ public class BattleshipService {
      */
     public String[][] convertGrid(Cell[][] grid) {
         String[][] result = new String[grid.length][grid[0].length];
-        for (int i = 0; i < grid.length; i++)
-            for (int j = 0; j < grid[i].length; j++)
+        for (int i = 0; i < grid.length; i++) {
+            for (int j = 0; j < grid[i].length; j++) {
                 result[i][j] = grid[i][j].name().toLowerCase();
+            }
+        }
         return result;
     }
 
@@ -281,7 +283,9 @@ public class BattleshipService {
      * @return coordinates of ship cells, or {@code null} when no ship is provided
      */
     private int[][] shipToCoords(Ship ship) {
-        if (ship == null) return null;
+        if (ship == null) {
+            return null;
+        }
         return ship.cells().stream()
                 .map(cell -> new int[]{cell[0], cell[1]})
                 .toArray(int[][]::new);

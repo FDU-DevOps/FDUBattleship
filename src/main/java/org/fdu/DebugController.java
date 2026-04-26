@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/battleship")
 public class DebugController {
 
-    private static final Logger log = LoggerFactory.getLogger(DebugController.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DebugController.class);
     // -------------------------------------------------------------------------
     // Debug / test endpoints
     // -------------------------------------------------------------------------
@@ -29,7 +29,7 @@ public class DebugController {
      */
     @PostMapping("/debug/set-manager")
     public void setManager(@RequestBody BattleshipManager newManager, HttpSession session) {
-        log.debug("POST /api/battleship/debug/set-manager");
+        LOG.debug("POST /api/battleship/debug/set-manager");
         session.setAttribute("game", newManager);
     }
 
@@ -41,7 +41,7 @@ public class DebugController {
      */
     @GetMapping("/humanStatus")
     public PlayerDTO getHumanStatus(HttpSession session) {
-        log.debug("GET /api/battleship/humanStatus");
+        LOG.debug("GET /api/battleship/humanStatus");
         BattleshipManager manager = (BattleshipManager) session.getAttribute("game");
         return manager.getHumanDTO();
     }
@@ -54,7 +54,7 @@ public class DebugController {
      */
     @GetMapping("/computerStatus")
     public PlayerDTO getComputerStatus(HttpSession session) {
-        log.debug("GET /api/battleship/computerStatus");
+        LOG.debug("GET /api/battleship/computerStatus");
         BattleshipManager manager = (BattleshipManager) session.getAttribute("game");
         return manager.getComputerDTO();
     }
@@ -67,7 +67,7 @@ public class DebugController {
      */
     @GetMapping("/battleshipManager")
     public BattleshipManager getBattleshipManager(HttpSession session) {
-        log.debug("GET /api/battleship/battleshipManager");
+        LOG.debug("GET /api/battleship/battleshipManager");
         return (BattleshipManager) session.getAttribute("game");
     }
 }
