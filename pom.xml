@@ -97,15 +97,9 @@
             <artifactId>maven-checkstyle-plugin</artifactId>
             <version>3.6.0</version>
             <configuration>
-                <failsOnError>false</failsOnError>
-                <linkXRef>false</linkXRef>
-                <checkstyleRules>
-                    <module name="Checker">
-                        <module name="LineLength">
-                            <property name="max" value="140"/>
-                        </module>
-                    </module>
-                </checkstyleRules>
+              <failsOnError>false</failsOnError>
+              <linkXRef>false</linkXRef>
+              <configLocation>checkstyle.xml</configLocation>
             </configuration>
         </plugin>
 
