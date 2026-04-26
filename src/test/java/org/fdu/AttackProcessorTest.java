@@ -175,8 +175,8 @@ class AttackProcessorTest {
     @Test
     @DisplayName("Ship: isSunk returns false when only some cells are hit")
     void shipIsNotSunkWhenPartiallySunk() {
-        shipGrid[0][0] = Cell.HIT;   // hit segment
-        shipGrid[0][1] = Cell.SHIP;  // unhit segment
+        shipGrid[0][1] = Cell.SHIP;
+        shipGrid[0][0] = Cell.HIT;
         Ship ship = new Ship(List.of(new int[]{0, 0}, new int[]{0, 1}));
         assertFalse(ship.isSunk(shipGrid));
     }
