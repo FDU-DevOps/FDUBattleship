@@ -91,6 +91,7 @@ public class BoardController {
 
     /**
      * Executes one attack turn and returns updated game state for both boards.
+     * Also masks the positions of ships with maskComputerGrid
      *
      * @param request attack request payload
      * @param session HTTP session containing per-user game state
@@ -102,7 +103,21 @@ public class BoardController {
         BattleshipManager manager = (BattleshipManager) session.getAttribute("game");
         AttackResponseDTO response = battleshipService.processAttack(request, manager);
         session.setAttribute("game", manager);
-        return ResponseEntity.ok(response);
+        String[][] maskedGrid = maskComputerGrid(response.grid());
+
+        AttackResponseDTO safeResponse = new AttackResponseDTO(
+                maskedGrid,
+                response.homeGrid(),
+                response.guessesLeft(),
+                response.gameStatus(),
+                response.message(),
+                response.computerRow(),
+                response.computerCol(),
+                response.computerMessage(),
+                response.sunkCells(),
+                response.homeSunkCells()
+        );
+        return ResponseEntity.ok(safeResponse);
     }
 
     /**
@@ -119,4 +134,33 @@ public class BoardController {
         }
         return manager;
     }
+
+    /**
+     * Converts the computer's board to a version with the ships hidden
+     * <p>
+     * "hit" and "miss" are unchanged so the player can see prior attacks
+     * all other values ("ship", "water") become water, thus hiding them.
+     * This prevents accidental leaking without changing anything else
+     * </p>
+     *
+     * @param grid the grid to be masked
+     * @return a masked grid containing only "hit", "miss", or "water"
+     */
+    private String[][] maskComputerGrid(String[][] grid) {
+        String[][] masked = new String[grid.length][grid[0].length];
+
+        for (int r = 0; r < grid.length; r++) {
+            for (int c = 0; c < grid[r].length; c++) {
+                String cell = grid[r][c];
+                masked[r][c] = switch (cell) {
+                    case "hit" -> "hit";
+                    case "miss" -> "miss";
+                    default -> "water"; // hides ship as water
+                };
+            }
+        }
+        return masked;
+    }
+
+
 }
