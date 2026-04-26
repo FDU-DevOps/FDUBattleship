@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -20,6 +21,7 @@ import java.util.Arrays;   // for printing out the board
                 "logging.level.root=ERROR",
                 "logging.level.org.springframework=ERROR"
         } )
+@ActiveProfiles("test")
 @AutoConfigureRestTestClient
 
 class BoardControllerRestTest {
@@ -372,7 +374,7 @@ class BoardControllerRestTest {
 
     private AttackResponseDTO attack(RestTestClient restClient, int row, int col) {
         AttackRequestDTO attackDTO = new AttackRequestDTO(row, col);
-        RestTestClient.RequestBodySpec spec = (RestTestClient.RequestBodySpec) restClient.post()
+        RestTestClient.RequestBodySpec spec = restClient.post()
                 .uri("/api/battleship/attack");
         return spec.body(attackDTO)
                 .exchange()
@@ -394,29 +396,26 @@ class BoardControllerRestTest {
     }
 
     private PlayerDTO getHumanStatus(RestTestClient client) {
-        PlayerDTO humanStatus = client.get().uri("/api/battleship/humanStatus")
+        return client.get().uri("/api/battleship/humanStatus")
                 .exchange()
                 .expectBody(PlayerDTO.class)
                 .returnResult()
                 .getResponseBody();
-        return humanStatus;
     }
 
     private PlayerDTO getComputerStatus(RestTestClient client) {
-        PlayerDTO computerStatus = client.get().uri("/api/battleship/computerStatus")
+        return client.get().uri("/api/battleship/computerStatus")
                 .exchange()
                 .expectBody(PlayerDTO.class)
                 .returnResult()
                 .getResponseBody();
-        return computerStatus;
     }
 
     private BattleshipManager getBattleshipManager(RestTestClient client) {
-        BattleshipManager manager = client.get().uri("/api/battleship/battleshipManager")
+        return client.get().uri("/api/battleship/battleshipManager")
                 .exchange()
                 .expectBody(BattleshipManager.class)
                 .returnResult()
                 .getResponseBody();
-        return manager;
     }
 }

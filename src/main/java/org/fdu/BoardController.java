@@ -105,60 +105,6 @@ public class BoardController {
         return ResponseEntity.ok(response);
     }
 
-    // -------------------------------------------------------------------------
-    // Debug / test endpoints
-    // -------------------------------------------------------------------------
-
-    /**
-     * Replaces the current session manager (debug/test only).
-     *
-     * @param newManager manager payload to set in session
-     * @param session    HTTP session containing per-user game state
-     */
-    @PostMapping("/debug/set-manager")
-    public void setManager(@RequestBody BattleshipManager newManager, HttpSession session) {
-        log.debug("POST /api/battleship/debug/set-manager");
-        session.setAttribute("game", newManager);
-    }
-
-    /**
-     * Returns current human-side DTO from session manager.
-     *
-     * @param session HTTP session containing per-user game state
-     * @return current human DTO
-     */
-    @GetMapping("/humanStatus")
-    public PlayerDTO getHumanStatus(HttpSession session) {
-        log.debug("GET /api/battleship/humanStatus");
-        BattleshipManager manager = (BattleshipManager) session.getAttribute("game");
-        return manager.getHumanDTO();
-    }
-
-    /**
-     * Returns current computer-side DTO from session manager.
-     *
-     * @param session HTTP session containing per-user game state
-     * @return current computer DTO
-     */
-    @GetMapping("/computerStatus")
-    public PlayerDTO getComputerStatus(HttpSession session) {
-        log.debug("GET /api/battleship/computerStatus");
-        BattleshipManager manager = (BattleshipManager) session.getAttribute("game");
-        return manager.getComputerDTO();
-    }
-
-    /**
-     * Returns the full session manager object (debug/test endpoint).
-     *
-     * @param session HTTP session containing per-user game state
-     * @return current session manager
-     */
-    @GetMapping("/battleshipManager")
-    public BattleshipManager getBattleshipManager(HttpSession session) {
-        log.debug("GET /api/battleship/battleshipManager");
-        return (BattleshipManager) session.getAttribute("game");
-    }
-
     /**
      * Retrieves session manager or creates one when absent.
      *
