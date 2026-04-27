@@ -1,4 +1,8 @@
 package org.fdu;
+
+import org.apache.logging.log4j.internal.annotation.SuppressFBWarnings;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 
@@ -31,10 +35,15 @@ import java.util.List;
  *                    can be checked for sunk ships. Null on computerDTO.
  */
 
+@SuppressFBWarnings(value = {"EI_EXPOSE_REP"},
+        justification = "DTO for testing requires direct mutable array access")
 public record PlayerDTO(Cell[][] grid,
                         Cell[][] homeGrid,
                         int guessesLeft,
                         GameStatus gameStatus,
                         List<Ship> ships,
                         List<Ship> homeShips
-) implements Serializable {}
+) implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
+}

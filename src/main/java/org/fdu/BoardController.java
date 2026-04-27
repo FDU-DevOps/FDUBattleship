@@ -147,6 +147,7 @@ public class BoardController {
      * @return a masked grid containing only "hit", "miss", or "water"
      */
     private String[][] maskComputerGrid(String[][] grid) {
+        if (grid == null) return null;
         String[][] masked = new String[grid.length][grid[0].length];
 
         for (int r = 0; r < grid.length; r++) {

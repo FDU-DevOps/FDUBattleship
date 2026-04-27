@@ -1,5 +1,7 @@
 package org.fdu;
 
+import org.apache.logging.log4j.internal.annotation.SuppressFBWarnings;
+
 /**
  * Data Transfer Object returned to the frontend after each attack turn.
  * <p>
@@ -48,6 +50,8 @@ package org.fdu;
  *                        computer just sunk. Null when the computer did not sink a ship.
  */
 
+@SuppressFBWarnings(value = {"EI_EXPOSE_REP"},
+        justification = "DTO for testing requires direct mutable array access")
 public record AttackResponseDTO(
         String[][] grid,
         String[][] homeGrid,

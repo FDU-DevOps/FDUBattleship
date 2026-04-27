@@ -363,13 +363,15 @@ class BoardControllerRestTest {
 
     // Other helper functions
     private int reset(RestTestClient restClient) {
-        return restClient.post()
+        Integer responseBody = restClient.post()
                 .uri("/api/battleship/start-game")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(Integer.class)
                 .returnResult()
                 .getResponseBody();
+        if (responseBody == null) return 0;
+        return responseBody;
     }
 
     private AttackResponseDTO attack(RestTestClient restClient, int row, int col) {

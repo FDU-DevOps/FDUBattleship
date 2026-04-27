@@ -16,10 +16,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @AutoConfigureRestTestClient
 public class VersionControllerTest {
     @Test
-    void contextLoads() {
-    }
-
-    @Test
     @DisplayName("Testing index version loads properly.")
     void testIndexPageLoads(@Autowired RestTestClient restClient) {
         RestTestClient.ResponseSpec spec = restClient.get().uri("/api/version").exchange();
