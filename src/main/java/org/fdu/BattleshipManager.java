@@ -3,6 +3,7 @@ package org.fdu;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,7 +21,8 @@ import java.util.concurrent.ThreadLocalRandom;
  * </p>
  */
 public class BattleshipManager implements Serializable {
-
+    @Serial
+    private static final long serialVersionUID = 1L;
     private static final Logger LOG = LoggerFactory.getLogger(BattleshipManager.class);
 
     // Fixed board dimension, both axes are 10x10 throughout the entire game
@@ -28,8 +30,8 @@ public class BattleshipManager implements Serializable {
     // Total number of attacks the player is allowed before the game is lost
     private static final int MAX_GUESSES = 30;
 
-    static final int[] FLEET_LENGTHS = {5, 4, 3, 3, 2};
-    private static final int TOTAL_SHIP_CELLS = Arrays.stream(FLEET_LENGTHS).sum(); // or computed from FLEET_LENGTHS
+    static final List<Integer> FLEET_LENGTHS = List.of(5, 4, 3, 3, 2);
+    private static final int TOTAL_SHIP_CELLS = FLEET_LENGTHS.stream().mapToInt(Integer::intValue).sum(); // or computed from FLEET_LENGTHS
     private static final int MAX_SHIP_PLACEMENT_ATTEMPTS = 1000;
 
     private static final char COLUMN_LABEL_START = 'A';
@@ -38,7 +40,6 @@ public class BattleshipManager implements Serializable {
     // Reassigned each turn with the updated DTO returned by AttackProcessor
     private PlayerDTO humanDTO;
     private PlayerDTO computerDTO;
-
     /**
      * Constructs a new BattleShipManager and initializes all game components.
      * <p>
@@ -68,23 +69,28 @@ public class BattleshipManager implements Serializable {
      *         sunk ship references, and the computer's move coordinates,
      *         or unchanged state if no game is active or cell was already attacked
      */
-    public synchronized TurnResultDTO performTurn(int row, int col, AttackProcessor processor) {
-        // if no game started
-        if (humanDTO == null || computerDTO == null) {
-            return new TurnResultDTO(humanDTO, computerDTO, null, null, -1, -1);
-        }
-        //already hit
-        Cell[][] tracking = humanDTO.grid();
-        if (tracking != null && (tracking[row][col] == Cell.HIT || tracking[row][col] == Cell.MISS)) {
-            // Return unchanged
-            return new TurnResultDTO(humanDTO, computerDTO, null, null, -1, -1);
-        }
-        // per-attack processor handles attacks and updates
-        TurnResultDTO result = processor.processAttack(row, col, this.humanDTO, this.computerDTO);
-        this.humanDTO = result.updatedHuman();
-        this.computerDTO = result.updatedComputer();
-        return result;
-    }
+     public synchronized TurnResultDTO performTurn(int row, int col, AttackProcessor processor) {
+         // Use getters to ensure we are accessing the volatile fields correctly
+         PlayerDTO currentHuman = getHumanDTO();
+         PlayerDTO currentComputer = getComputerDTO();
+
+         //safety check
+         if (currentHuman == null || currentComputer == null) {
+             return new TurnResultDTO(currentHuman, currentComputer, null, null, -1, -1);
+         }
+         //Already hit
+         Cell[][] tracking = currentHuman.grid();
+         if (tracking != null && (tracking[row][col] == Cell.HIT || tracking[row][col] == Cell.MISS)) {
+             return new TurnResultDTO(currentHuman, currentComputer, null, null, -1, -1);
+         }
+
+         // attacks and updates handled by per-attack processor
+         TurnResultDTO result = processor.processAttack(row, col, currentHuman, currentComputer);
+         setHumanDTO(result.updatedHuman());
+         setComputerDTO(result.updatedComputer());
+
+         return result;
+     }
 
     /**
      * Constructs and initializes all game components for a new session. This skips manual placement
@@ -102,11 +108,11 @@ public class BattleshipManager implements Serializable {
         initializePlacementPhase();
 
         // --- Human's home grid (ships shown to the player, targeted by the computer) ---
-        Cell[][] homeGrid = humanDTO.homeGrid(); //empty grid from the placement phase that will now have ships
+        Cell[][] homeGrid = getHumanDTO().homeGrid(); //empty grid from the placement phase that will now have ships
         List<Ship> homeShips = placeAllShips(homeGrid);
 
         //humanDTO.grid() is still empty, homeGrid is now filled with the random ships
-        humanDTO = new PlayerDTO(humanDTO.grid(), homeGrid, MAX_GUESSES,
+        humanDTO = new PlayerDTO(getHumanDTO().grid(), homeGrid, MAX_GUESSES,
                 GameStatus.IN_PROGRESS, new ArrayList<>(), homeShips);
     }
 
@@ -117,7 +123,7 @@ public class BattleshipManager implements Serializable {
      * The game is not yet attackable after this call.
      * </p>
      */
-    public synchronized void initializePlacementPhase() {
+    public final synchronized void initializePlacementPhase() {
 
         // --- Computer's ship grid ---
         Cell[][] compGrid = blankGrid(null);
@@ -145,7 +151,7 @@ public class BattleshipManager implements Serializable {
      * @return true if placed successfully, false if out of bounds or overlapping
      */
     public synchronized boolean placePlayerShip(int row, int col, int shipLength, boolean horizontal) {
-        Cell[][] homeGrid = humanDTO.homeGrid();
+        Cell[][] homeGrid = getHumanDTO().homeGrid();
 
         // --- Bounds check ---
         boolean fits = horizontal
@@ -174,10 +180,10 @@ public class BattleshipManager implements Serializable {
         }
 
         // Add the new ship to the human's home ship list
-        List<Ship> homeShips = new ArrayList<>(humanDTO.homeShips());
+        List<Ship> homeShips = new ArrayList<>(getHumanDTO().homeShips());
         homeShips.add(new Ship(cells));
-        humanDTO = new PlayerDTO(humanDTO.grid(), homeGrid, humanDTO.guessesLeft(),
-                GameStatus.PLACEMENT, humanDTO.ships(), homeShips);
+        humanDTO = new PlayerDTO(getHumanDTO().grid(), homeGrid, getHumanDTO().guessesLeft(),
+                GameStatus.PLACEMENT, getHumanDTO().ships(), homeShips);
         return true;
     }
 
@@ -187,9 +193,9 @@ public class BattleshipManager implements Serializable {
      *
      * @return true if total SHIP cells == 17 (5+4+3+3+2), false otherwise
      */
-    public boolean isPlacementComplete() {
+    public synchronized boolean isPlacementComplete() {
         int shipCells = 0;
-        for (Cell[] row : humanDTO.homeGrid()) {
+        for (Cell[] row : getHumanDTO().homeGrid()) {
             for (Cell c : row) {
                 if (c == Cell.SHIP) {
                     shipCells++;
@@ -237,7 +243,7 @@ public class BattleshipManager implements Serializable {
             try {
                 blankGrid(grid);
                 List<Ship> allShips = new ArrayList<>();
-                for (int len : FLEET_LENGTHS) {
+                for (int len : BattleshipManager.FLEET_LENGTHS) {
                     allShips.add(placeShip(grid, len));
                 }
                 return allShips; //(Returns once all ships placed successfully)
@@ -294,7 +300,12 @@ public class BattleshipManager implements Serializable {
         }
 
         // tried ATTEMPTS times and failed
-        throw new RuntimeException("Could not place ship of length " + shipLength);
+        class ShipPlacementException extends RuntimeException {
+            public ShipPlacementException(String message) {
+                super(message);
+            }
+        }
+        throw new ShipPlacementException("Could not place ship of length " + shipLength);
     }
 
     // -------------------------------------------------------------------------
@@ -327,19 +338,19 @@ public class BattleshipManager implements Serializable {
     // Getters / Setters
     // -------------------------------------------------------------------------
 
-    public PlayerDTO getHumanDTO()    {
+    public synchronized PlayerDTO getHumanDTO()    {
         return humanDTO;
     }
 
-    public void setHumanDTO(PlayerDTO humanDTO) {
+    public synchronized void setHumanDTO(PlayerDTO humanDTO) {
         this.humanDTO = humanDTO;
     }
 
-    public PlayerDTO getComputerDTO() {
+    public synchronized PlayerDTO getComputerDTO() {
         return computerDTO;
     }
 
-    public void setComputerDTO(PlayerDTO computerDTO) {
+    public synchronized void setComputerDTO(PlayerDTO computerDTO) {
         this.computerDTO = computerDTO;
     }
 

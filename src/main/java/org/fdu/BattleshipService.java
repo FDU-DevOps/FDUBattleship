@@ -105,7 +105,7 @@ public class BattleshipService {
         }
 
         int placed = manager.getHumanDTO().homeShips().size();
-        int required = BattleshipManager.FLEET_LENGTHS[placed];
+        int required = BattleshipManager.FLEET_LENGTHS.get(placed);
 
         if (request.shipLength() != required) {
             throw new IllegalStateException("Ship length does not match required fleet order");
@@ -267,6 +267,9 @@ public class BattleshipService {
      * @return string grid with lowercase cell values
      */
     public String[][] convertGrid(Cell[][] grid) {
+        if (grid == null || grid.length == 0) {
+            return new String[0][0];
+        }
         String[][] result = new String[grid.length][grid[0].length];
         for (int i = 0; i < grid.length; i++) {
             for (int j = 0; j < grid[i].length; j++) {
