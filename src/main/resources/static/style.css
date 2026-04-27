@@ -25,10 +25,10 @@ td, th {
 }
 
 /* Labels */
-/*.label {
+.label {
     background-color: #ddd;
 }
-*/
+
 /* Cell States */
 .water {
     background-color: #79afd2;
@@ -49,10 +49,10 @@ td, th {
 }
 
 /* Outline computer's last move with orange*/
-/*.last-computer-move {
+.last-computer-move {
     outline: 3px solid orange;
     outline-offset: -3px;
-}*/
+}
 
 /* Places both boards side-by-side with spacing */
 .boards-container {

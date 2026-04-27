@@ -243,7 +243,7 @@ public class BattleshipManager implements Serializable {
             try {
                 blankGrid(grid);
                 List<Ship> allShips = new ArrayList<>();
-                for (int len : BattleshipManager.FLEET_LENGTHS) {
+                for (int len : FLEET_LENGTHS) {
                     allShips.add(placeShip(grid, len));
                 }
                 return allShips; //(Returns once all ships placed successfully)
@@ -301,7 +301,7 @@ public class BattleshipManager implements Serializable {
 
         // tried ATTEMPTS times and failed
         class ShipPlacementException extends RuntimeException {
-            public ShipPlacementException(String message) {
+            ShipPlacementException(String message) {
                 super(message);
             }
         }

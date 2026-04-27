@@ -10,6 +10,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * Main entry point for the Battleship Spring Boot application.
  */
 @SpringBootApplication
+@SuppressWarnings("checkstyle:FinalClass")
 public class BattleshipApplication {
 
     /**
