@@ -9,6 +9,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      checks: write
+
     steps:
       # Check out the code from the branch
       - name: Checkout code
@@ -22,13 +27,52 @@ jobs:
           distribution: "temurin"
           cache: "maven"
 
-      # Run all automated tests
+      # Run all automated tests and static code analysis
       - name: Build and Test with Maven
-        run: mvn -B clean verify
+        run: mvn -B clean verify checkstyle:checkstyle spotbugs:spotbugs pmd:pmd pmd:cpd
+
+      #Upload Checkstyle Annotations to the GitHub Actions Summary
+      - name: Publish Checkstyle
+        if: always()
+        uses: jwgmeligmeyling/checkstyle-github-action@master
+        with:
+          path: '**/checkstyle-result.xml'
+
+      #Upload SpotBugs Annotations to the GitHub Actions Summary
+      - name: Publish SpotBugs
+        if: always()
+        uses: jwgmeligmeyling/spotbugs-github-action@master
+        with:
+          path: '**/spotbugsXml.xml'
+
+      #Upload PMD Annotations to the GitHub Actions Summary
+      - name: Publish PMD
+        if: always()
+        uses: jwgmeligmeyling/pmd-github-action@master
+        with:
+          path: '**/pmd.xml'
 
       # Upload the compiled JAR as a downloadable artifact
       - name: Upload JAR file
+        if: always()
         uses: actions/upload-artifact@v6
         with:
           name: battleship-jar
           path: target/*.jar
+
+      #UPLOAD ALL ANALYSIS ARTIFACT
+      - name: Upload Analysis Report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: Analysis report
+          path: |
+            target/site/jacoco/
+            target/reports/pmd.html
+            target/reports/cpd.html
+            target/reports/checkstyle.html
+            target/site/spotbugs.html
+
+      #Fail Workflow if violations were found
+      - name: Enforce Quality Gates
+        run: mvn -B checkstyle:check spotbugs:check pmd:check pmd:cpd-check
