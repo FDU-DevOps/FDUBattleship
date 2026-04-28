@@ -8,4 +8,7 @@ package org.fdu;
  * @param shipLength Length of the ship being placed
  * @param horizontal true = horizontal placement, false = vertical
  */
-public record PlaceShipRequestDTO(int row, int col, int shipLength, boolean horizontal) {}
+public record PlaceShipRequestDTO(int row,
+                                  int col,
+                                  int shipLength,
+                                  boolean horizontal) { }

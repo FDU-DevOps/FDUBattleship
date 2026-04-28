@@ -1,5 +1,9 @@
 package org.fdu;
+import org.apache.logging.log4j.internal.annotation.SuppressFBWarnings;
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.List;
+
 /**
  * Immutable value representing one ship on the board.
  * <p>
@@ -10,7 +14,12 @@ import java.util.List;
  *
  * @param cells each element is an int[]{row, col} for one ship cell
  */
-public record Ship(List<int[]> cells) {
+@SuppressFBWarnings(value = {"EI_EXPOSE_REP"},
+        justification = "DTO for testing requires direct mutable array access")
+
+public record Ship(List<int[]> cells) implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     /**
      * Returns true when every cell of this ship reads HIT on the given grid.
@@ -19,11 +28,15 @@ public record Ship(List<int[]> cells) {
      */
     public boolean isSunk(Cell[][] grid) {
         for (int[] cell : cells) {
-            if (grid[cell[0]][cell[1]] != Cell.HIT) return false;
+            if (grid[cell[0]][cell[1]] != Cell.HIT) {
+                return false;
+            }
         }
         return true;
     }
 
     /** Number of cells this ship occupies. */
-    public int size() { return cells.size(); }
+    public int size() {
+        return cells.size();
+    }
 }

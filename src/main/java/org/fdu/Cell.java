@@ -8,8 +8,7 @@ package org.fdu;
  * </p>
  */
 
-public enum Cell
-{
+public enum Cell {
     WATER,
     SHIP,
     HIT,

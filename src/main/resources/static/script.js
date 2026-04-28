@@ -1,12 +1,60 @@
-// Size of the board and column labels
-const size = 10;
-const letters = "ABCDEFGHIJ";
+// -----------------------------------------------------------------------------
+// Constants
+// -----------------------------------------------------------------------------
+
+const BOARD_SIZE = 10;
+const LETTERS = "ABCDEFGHIJ";
+const HEADER_OFFSET = 1;
+const NO_COORD = -1;
+
+const CELL_TEXT = {
+    water: "~",
+    ship: "#",
+    hit: "X",
+    miss: "O",
+    sunk: "☠"
+};
+
+const GAME_STATUS_IN_PROGRESS = "IN_PROGRESS";
+
+const SUNK_GLOW_COLOR = "#f1c40f";
+const SUNK_GLOW_WIDTH = 3; // px
+const SUNK_GLOW_PX = `${SUNK_GLOW_WIDTH}px`;
+
+const API_PATHS = {
+    attack: "api/battleship/attack",
+    placeShip: "api/battleship/place-ship",
+    startGame: "api/battleship/start-game",
+    placementStart: "api/battleship/placement-start",
+    version: "api/version"
+};
+
+const BOARD_IDS = {
+    human: "human-board",
+    computer: "computer-board"
+};
+
+const ELEMENT_IDS = {
+    message: "message",
+    computerMessage: "computer-message",
+    guessesLeft: "guesses-left",
+    version: "version",
+    placementUi: "placement-ui",
+    placementLabel: "placement-label",
+    confirmPlacement: "confirmPlacement",
+    toggleOrientation: "toggleOrientation"
+};
+
+// User Feedback button
+const USER_FEEDBACK_LINK =
+    "https://docs.google.com/forms/d/e/1FAIpQLSdr2xzx1jbwUW6hDL321aXq4rXhb8n56_qPCpv8hvU4RCcTCA/viewform";
 
 /**
  * Tracks whether the game has ended (WIN or LOSS).
  * Used to block further attacks after the game is over.
  */
 let gameOver = false;
+
 // Placement phase state
 const FLEET = [5, 4, 3, 3, 2];
 const FLEET_NAMES = ["Carrier", "Battleship", "Submarine", "Submarine", "Patrol Boat"];
@@ -14,42 +62,44 @@ let placementIndex = 0;
 let placementHorizontal = true;
 let placementComplete = false;
 
-// User Feedback button
-const USER_FEEDBACK_LINK = 'https://docs.google.com/forms/d/e/1FAIpQLSdr2xzx1jbwUW6hDL321aXq4rXhb8n56_qPCpv8hvU4RCcTCA/viewform';
+// -----------------------------------------------------------------------------
+// UI actions
+// -----------------------------------------------------------------------------
+
 function handleFeedbackClick() {
-    window.open(USER_FEEDBACK_LINK, '_blank');
+    window.open(USER_FEEDBACK_LINK, "_blank");
 }
 
 /**
- * Builds a 10x10 board inside the given table element.
+ * Builds a board inside the given table element.
  * @param {string} tableId - The ID of the table element to populate.
  * @param {boolean} clickable - If true, each cell fires submitAttack on click.
  */
 function loadBoard(tableId, clickable) {
     const table = document.getElementById(tableId);
-    table.innerHTML = '';
+    table.innerHTML = "";
 
     // Top header row (A-J)
     const headerRow = table.insertRow();
     headerRow.insertCell(); // empty corner
-    for (let j = 0; j < size; j++) {
+    for (let j = 0; j < BOARD_SIZE; j++) {
         const th = document.createElement("th");
-        th.textContent = letters[j];
+        th.textContent = LETTERS[j];
         th.className = "label";
         headerRow.appendChild(th);
     }
 
-    for (let i = 0; i < size; i++) {
+    for (let i = 0; i < BOARD_SIZE; i++) {
         const row = table.insertRow();
         const labelCell = document.createElement("th");
-        labelCell.textContent = String(i + 1);
+        labelCell.textContent = String(i + HEADER_OFFSET);
         labelCell.className = "label";
         row.appendChild(labelCell);
 
-        for (let j = 0; j < size; j++) {
+        for (let j = 0; j < BOARD_SIZE; j++) {
             const cell = row.insertCell();
             cell.className = "water";
-            cell.textContent = "~";
+            cell.textContent = CELL_TEXT.water;
             if (clickable) {
                 cell.onclick = function () {
                     submitAttack(i, j).catch(console.error);
@@ -60,13 +110,40 @@ function loadBoard(tableId, clickable) {
 }
 
 /**
- * Sends the player's chosen cell to the backend and updates the UI.
- * Handles both the player's attack result and the computer's counter-move.
- * Ends the game if the backend returns a non-IN_PROGRESS status.
+ * State-driven board renderer.
+ * Renders every cell from provided grid state.
  *
- * @param {number} row - Zero-based row index of the attacked cell.
- * @param {number} col - Zero-based column index of the attacked cell.
+ * @param {string} tableId
+ * @param {string[][]} grid
  */
+function renderBoard(tableId, grid) {
+    const table = document.getElementById(tableId);
+
+    for (let r = 0; r < grid.length; r++) {
+        for (let c = 0; c < grid[r].length; c++) {
+            const cell = table.rows[r + HEADER_OFFSET].cells[c + HEADER_OFFSET];
+            const state = String(grid[r][c] || "").toLowerCase();
+
+            // Preserve sunk icon if already marked and current state is still hit
+            const wasSunk = cell.classList.contains("sunk");
+
+            cell.className = state;
+            if (wasSunk && state === "hit") {
+                cell.classList.add("sunk");
+            }
+
+            if (state === "hit") {
+                cell.textContent = wasSunk ? CELL_TEXT.sunk : CELL_TEXT.hit;
+            } else if (state === "miss") {
+                cell.textContent = CELL_TEXT.miss;
+            } else if (state === "ship") {
+                cell.textContent = CELL_TEXT.ship;
+            } else {
+                cell.textContent = CELL_TEXT.water;
+            }
+        }
+    }
+}
 
 /**
  * @typedef {Object} AttackResponse
@@ -79,116 +156,78 @@ function loadBoard(tableId, clickable) {
  * @property {string} message
  * @property {string} computerMessage
  * @property {string} gameStatus
- * @property {number[][]|null} sunkCells        - Coords of the computer ship just sunk, or null
- * @property {number[][]|null} homeSunkCells     - Coords of the player ship just sunk, or null
+ * @property {number[][]|null} sunkCells
+ * @property {number[][]|null} homeSunkCells
  */
 
 async function submitAttack(row, col) {
     if (gameOver) return;
 
-    const response = await fetch("api/battleship/attack", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ row: row, column: col })
-    });
+    try {
+        const response = await fetch(API_PATHS.attack, {
+            method: "POST",
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify({ row, column: col })
+        });
 
-    /** @type {AttackResponse} */
-    const data = await response.json();
-
-    if (data.isError) {
-        document.getElementById("message").innerText = "Cell already attacked.";
-        return;
-    }
-
-    // Update the cell the player just attacked
-    updateComputerBoardCell(row, col, data.grid[row][col]);
-
-    // Repaint the whole human board and highlight the computer's move
-    renderHumanBoard(data.homeGrid);
-    if (data.computerRow >= 0) {
-        highlightLastComputerMove(data.computerRow, data.computerCol);
-    }
-
-    // Apply sunk styling to destroyed ships
-    if (data.sunkCells) {
-        markSunkCells("computer-board", data.sunkCells);
-    }
-    if (data.homeSunkCells) {
-        markSunkCells("human-board", data.homeSunkCells);
-    }
-
-    document.getElementById("guesses-left").innerText = `Guesses left: ${data.guessesLeft}`;
-    document.getElementById("message").innerText = data.message;
-    document.getElementById("computer-message").innerText = data.computerMessage || "";
-
-    if (data.gameStatus !== "IN_PROGRESS") {
-        gameOver = true;
-    }
-}
-
-/**
- * Updates a single cell on the computer's board after an attack.
- * @param {number} row - Zero-based row index.
- * @param {number} col - Zero-based column index.
- * @param {string} newState - "hit" or "miss" from the backend.
- */
-function updateComputerBoardCell(row, col, newState) {
-    const table = document.getElementById("computer-board");
-    const cell = table.rows[row + 1].cells[col + 1];
-    if (newState === "hit") {
-        cell.className = "hit";
-        cell.textContent = "X";
-    } else {
-        cell.className = "miss";
-        cell.textContent = "O";
-    }
-}
-
-/**
- * Repaints the entire human board based on the latest grid state from the backend.
- * @param {string[][]} homeGrid - 2D array of cell states: "hit", "miss", "ship", or "water".
- */
-function renderHumanBoard(homeGrid) {
-    const table = document.getElementById("human-board");
-    for (let r = 0; r < homeGrid.length; r++) {
-        for (let c = 0; c < homeGrid[r].length; c++) {
-            const cell = table.rows[r + 1].cells[c + 1];
-            const state = homeGrid[r][c].toLowerCase();
-            // Preserve sunk class if the cell was already marked sunk
-            const wasSunk = cell.classList.contains("sunk");
-            cell.className = state;
-            if (wasSunk && (state === "hit")) cell.classList.add("sunk");
-
-            if (state === "hit") {
-                // If it was already marked sunk, keep the special character
-                if (wasSunk) {
-                    cell.classList.add("sunk");
-                    cell.textContent = "☠";
-                } else {
-                    cell.textContent = "X";
-                }
-            }
-            else if (state === "miss") cell.textContent = "O";
-            else if (state === "ship") cell.textContent = "#";
-            else                       cell.textContent = "~";
+        const raw = await response.text();
+        let data;
+        try {
+            data = JSON.parse(raw);
+        } catch {
+            data = null;
         }
+
+        // errors via HTTP status + ProblemDetail
+        if (!response.ok) {
+            document.getElementById(ELEMENT_IDS.message).innerText =
+                data?.detail ?? `Request failed with status ${response.status}`;
+            document.getElementById(ELEMENT_IDS.computerMessage).innerText = "";
+            return;
+        }
+
+        // Render full board state from response
+        if (!data) {
+            document.getElementById(ELEMENT_IDS.message).innerText = "Empty response from server.";
+            document.getElementById(ELEMENT_IDS.computerMessage).innerText = "";
+            return;
+        }
+
+        renderBoard(BOARD_IDS.computer, data.grid ?? []);
+        renderBoard(BOARD_IDS.human, data.homeGrid ?? []);
+
+        if (data.computerRow !== NO_COORD) {
+            highlightLastComputerMove(data.computerRow, data.computerCol);
+        }
+
+        if (data.sunkCells) markSunkCells(BOARD_IDS.computer, data.sunkCells);
+        if (data.homeSunkCells) markSunkCells(BOARD_IDS.human, data.homeSunkCells);
+
+        document.getElementById(ELEMENT_IDS.guessesLeft).innerText = `Guesses left: ${data.guessesLeft}`;
+        document.getElementById(ELEMENT_IDS.message).innerText = data.message;
+        document.getElementById(ELEMENT_IDS.computerMessage).innerText = data.computerMessage || "";
+
+        if (data.gameStatus !== GAME_STATUS_IN_PROGRESS) {
+            gameOver = true;
+        }
+    } catch (error) {
+        document.getElementById(ELEMENT_IDS.message).innerText = "Network error. Please try again.";
+        document.getElementById(ELEMENT_IDS.computerMessage).innerText = "";
+        console.error(error);
     }
 }
 
-/**
- * Applies the "sunk" class to every cell belonging to a just-destroyed ship.
- * The sunk class adds a black/yellow glow so the entire wreck is visually distinct.
- *
- * @param {string} tableId  - "computer-board" or "human-board"
- * @param {number[][]} cells - Array of [row, col] pairs for the sunk ship's cells
- */
 function markSunkCells(tableId, cells) {
     const table = document.getElementById(tableId);
 
     for (const [r, c] of cells) {
-        const cell = table.rows[r + 1].cells[c + 1];
+        const cell = table.rows[r + HEADER_OFFSET].cells[c + HEADER_OFFSET];
         cell.classList.add("sunk");
-        cell.textContent = "☠";
+        cell.textContent = CELL_TEXT.sunk;
     }
 
     cleanSunkBorders(tableId, cells);
@@ -197,129 +236,170 @@ function markSunkCells(tableId, cells) {
 function cleanSunkBorders(tableId, cells) {
     const table = document.getElementById(tableId);
     const set = new Set(cells.map(([r, c]) => `${r},${c}`));
-    const glow = "3px solid #f1c40f";
 
     for (const [r, c] of cells) {
-        const cell = table.rows[r + 1].cells[c + 1];
+        const cell = table.rows[r + HEADER_OFFSET].cells[c + HEADER_OFFSET];
         const shadows = [];
 
-        // Add an inset shadow only on sides that face outward (no sunk neighbor)
-        if (!set.has(`${r - 1},${c}`)) shadows.push("inset 0  3px 0 0 #f1c40f");  // top
-        if (!set.has(`${r + 1},${c}`)) shadows.push("inset 0 -3px 0 0 #f1c40f");  // bottom
-        if (!set.has(`${r},${c - 1}`)) shadows.push("inset  3px 0 0 0 #f1c40f");  // left
-        if (!set.has(`${r},${c + 1}`)) shadows.push("inset -3px 0 0 0 #f1c40f");  // right
+        if (!set.has(`${r - HEADER_OFFSET},${c}`)) {
+            shadows.push(`inset 0 ${SUNK_GLOW_PX} 0 0 ${SUNK_GLOW_COLOR}`); // top
+        }
+        if (!set.has(`${r + HEADER_OFFSET},${c}`)) {
+            shadows.push(`inset 0 -${SUNK_GLOW_PX} 0 0 ${SUNK_GLOW_COLOR}`); // bottom
+        }
+        if (!set.has(`${r},${c - HEADER_OFFSET}`)) {
+            shadows.push(`inset ${SUNK_GLOW_PX} 0 0 0 ${SUNK_GLOW_COLOR}`); // left
+        }
+        if (!set.has(`${r},${c + HEADER_OFFSET}`)) {
+            shadows.push(`inset -${SUNK_GLOW_PX} 0 0 0 ${SUNK_GLOW_COLOR}`); // right
+        }
 
         cell.style.boxShadow = shadows.join(", ");
     }
 }
 
-/**
- * Highlights the cell the computer attacked last turn with an orange outline.
- * Removes the highlight from the previously marked cell first.
- *
- * @param {number} row - Zero-based row index of the computer's move.
- * @param {number} col - Zero-based column index of the computer's move.
- */
 function highlightLastComputerMove(row, col) {
     const prev = document.querySelector(".last-computer-move");
     if (prev) prev.classList.remove("last-computer-move");
-    const table = document.getElementById("human-board");
-    table.rows[row + 1].cells[col + 1].classList.add("last-computer-move");
+
+    const table = document.getElementById(BOARD_IDS.human);
+    table.rows[row + HEADER_OFFSET].cells[col + HEADER_OFFSET].classList.add("last-computer-move");
 }
 
 async function loadVersion() {
-    const response = await fetch("api/version");
-    const version = await response.text();
-    document.getElementById("version").innerText = "Version: " + version;
+    try {
+        const response = await fetch(API_PATHS.version);
+
+        if (!response.ok) {
+            document.getElementById(ELEMENT_IDS.version).innerText = `Version: unavailable`;
+            return;
+        }
+
+        const version = await response.text();
+        document.getElementById(ELEMENT_IDS.version).innerText = `Version: ${version}`;
+    } catch (error) {
+        document.getElementById(ELEMENT_IDS.version).innerText = `Version: unavailable`;
+        console.error(error);
+    }
 }
-/**
- * Toggles ship orientation between horizontal and vertical.
- * Updates the button label to reflect the current selection.
- */
+
 function toggleOrientation() {
     placementHorizontal = !placementHorizontal;
-    document.getElementById("toggleOrientation").textContent =
+    document.getElementById(ELEMENT_IDS.toggleOrientation).textContent =
         placementHorizontal ? "Orientation: Horizontal" : "Orientation: Vertical";
 }
 
-/**
- * Called when the player clicks a cell on the human board during placement phase.
- * Sends the placement to the backend, re-renders the board on success.
- * Advances to the next ship or enables Start Game when all ships are placed.
- *
- * @param {number} row - Zero-based row index of the clicked cell.
- * @param {number} col - Zero-based column index of the clicked cell.
- */
 async function placeShipAtCell(row, col) {
     if (placementComplete) return;
 
-    const response = await fetch("api/battleship/place-ship", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            row: row,
-            col: col,
-            shipLength: FLEET[placementIndex],
-            horizontal: placementHorizontal
-        })
-    });
+    try {
+        const response = await fetch(API_PATHS.placeShip, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                row,
+                col,
+                shipLength: FLEET[placementIndex],
+                horizontal: placementHorizontal
+            })
+        });
 
-    const data = await response.json();
+        let data;
+        try {
+            data = await response.json();
+        } catch {
+            data = null;
+        }
 
-    if (data.isError) {
-        document.getElementById("computer-message").innerText = "Invalid placement — try again.";
-        return;
-    }
+        if (!response.ok) {
+            document.getElementById(ELEMENT_IDS.computerMessage).innerText =
+                data?.detail ?? `Request failed with status ${response.status}`;
+            return;
+        }
 
-    // Re-render the home board with the newly placed ship
-    renderHumanBoard(data.homeGrid);
-    document.getElementById("computer-message").innerText = "";
-    placementIndex++;
+        if (!data) {
+            document.getElementById(ELEMENT_IDS.computerMessage).innerText = "Empty response from server.";
+            return;
+        }
 
-    if (data.gameStatus === "IN_PROGRESS") {
-        // All ships placed — enable Start Game button
-        placementComplete = true;
-        document.getElementById("placement-label").innerText = "All ships placed! Press Start Game.";
-        document.getElementById("confirmPlacement").disabled = false;
-    } else {
-        // Update label to show next ship
-        document.getElementById("placement-label").innerText =
-            `Place your ${FLEET_NAMES[placementIndex]} (${FLEET[placementIndex]} cells)`;
+        renderBoard(BOARD_IDS.human, data.homeGrid ?? []);
+        document.getElementById(ELEMENT_IDS.computerMessage).innerText = "";
+        placementIndex++;
+
+        if (data.gameStatus === GAME_STATUS_IN_PROGRESS) {
+            placementComplete = true;
+            document.getElementById(ELEMENT_IDS.placementLabel).innerText = "All ships placed! Press Start Game.";
+            document.getElementById(ELEMENT_IDS.confirmPlacement).disabled = false;
+        } else {
+            document.getElementById(ELEMENT_IDS.placementLabel).innerText =
+                `Place your ${FLEET_NAMES[placementIndex]} (${FLEET[placementIndex]} cells)`;
+        }
+    } catch (error) {
+        document.getElementById(ELEMENT_IDS.computerMessage).innerText = "Network error. Please try again.";
+        console.error(error);
     }
 }
 
-/**
- * Called when the player clicks Start Game after all ships are placed.
- * Calls /start-game, hides placement UI, makes computer board clickable.
- */
 async function confirmPlacement() {
-    const response = await fetch("api/battleship/start-game", { method: "POST" });
-    const guessesLeft = await response.json();
+    try {
+        const response = await fetch(API_PATHS.startGame, { method: "POST" });
 
-    document.getElementById("guesses-left").innerText = `Guesses left: ${guessesLeft}`;
-    document.getElementById("placement-ui").style.display = "none";
+        if (!response.ok) {
+            let detail = `Request failed with status ${response.status}`;
+            try {
+                const err = await response.json();
+                detail = err?.detail || detail;
+            } catch {
+                // ignore parse errors
+            }
+            document.getElementById(ELEMENT_IDS.message).innerText = detail;
+            return;
+        }
 
-    // Make computer board clickable for attacks
-    loadBoard("computer-board", true);
+        const guessesLeft = await response.json();
+
+        document.getElementById(ELEMENT_IDS.guessesLeft).innerText = `Guesses left: ${guessesLeft}`;
+        document.getElementById(ELEMENT_IDS.placementUi).style.display = "none";
+
+        loadBoard(BOARD_IDS.computer, true);
+    } catch (error) {
+        document.getElementById(ELEMENT_IDS.message).innerText = "Network error. Please try again.";
+        console.error(error);
+    }
 }
+
 // On page load: start a new game, build both boards, and show the player's ships
 window.onload = async function () {
-    // Call placement-start instead of start-game
-    await fetch("api/battleship/placement-start", { method: "POST" });
+    try {
+        const response = await fetch(API_PATHS.placementStart, { method: "POST" });
 
-    // Build both boards — human-board clickable for placement, computer-board not yet
-    loadBoard("human-board", false);
-    loadBoard("computer-board", false);
-
-    // Set human board cells clickable for ship placement
-    const humanTable = document.getElementById("human-board");
-    for (let i = 0; i < size; i++) {
-        for (let j = 0; j < size; j++) {
-            humanTable.rows[i + 1].cells[j + 1].onclick = function () {
-                placeShipAtCell(i, j).catch(console.error);
-            };
+        if (!response.ok) {
+            let detail = `Request failed with status ${response.status}`;
+            try {
+                const err = await response.json();
+                detail = err?.detail || detail;
+            } catch {
+                // ignore parse errors
+            }
+            document.getElementById(ELEMENT_IDS.message).innerText = detail;
+            return;
         }
-    }
 
-    await loadVersion();
+        loadBoard(BOARD_IDS.human, false);
+        loadBoard(BOARD_IDS.computer, false);
+
+        const humanTable = document.getElementById(BOARD_IDS.human);
+        for (let i = 0; i < BOARD_SIZE; i++) {
+            for (let j = 0; j < BOARD_SIZE; j++) {
+                humanTable.rows[i + HEADER_OFFSET].cells[j + HEADER_OFFSET].onclick = function () {
+                    placeShipAtCell(i, j).catch(console.error);
+                };
+            }
+        }
+
+        await loadVersion();
+    } catch (error) {
+        document.getElementById(ELEMENT_IDS.message).innerText = "Network error. Please try again.";
+        console.error(error);
+    }
 };

@@ -1,5 +1,7 @@
 package org.fdu;
 
+import org.apache.logging.log4j.internal.annotation.SuppressFBWarnings;
+
 /**
  * Data Transfer Object returned to the frontend after each attack turn.
  * <p>
@@ -41,9 +43,6 @@ package org.fdu;
  * @param computerMessage human-readable result of the computer's attack this turn.
  *                        Examples: "Computer hit your ship at B3!", "Computer missed at G7".
  *                        Empty string if the computer did not fire this turn.
- * @param isError         true if the request was invalid and no game state was changed.
- *                        Triggered by out-of-bounds coordinates, a cell already attacked,
- *                        or no active game session found.
  * @param sunkCells       row/col pairs of every cell belonging to the computer ship the
  *                        player just sunk, so the frontend can apply a sunk visual.
  *                        Null when the player's attack did not sink a ship.
@@ -51,6 +50,8 @@ package org.fdu;
  *                        computer just sunk. Null when the computer did not sink a ship.
  */
 
+@SuppressFBWarnings(value = {"EI_EXPOSE_REP"},
+        justification = "DTO for testing requires direct mutable array access")
 public record AttackResponseDTO(
         String[][] grid,
         String[][] homeGrid,
@@ -60,7 +61,6 @@ public record AttackResponseDTO(
         int computerRow,
         int computerCol,
         String computerMessage,
-        boolean isError,
         int[][] sunkCells,
         int[][] homeSunkCells
-) {}
+) { }
