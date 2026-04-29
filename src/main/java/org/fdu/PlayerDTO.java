@@ -1,13 +1,18 @@
 package org.fdu;
+
+import org.apache.logging.log4j.internal.annotation.SuppressFBWarnings;
+
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * Data Transfer Object representing the current state of one side of the game.
  * <p>
- * The single DTO class in the project. BattleShipManager holds two instances:
+ * BattleShipManager holds two instances:
  * humanDTO for the human player's tracking grid, and computerDTO for the
  * computer's ship grid. AttackProcessor reads from both and returns updated
- * copies. No other DTO classes exist.
+ * copies.
  * </p>
  *
  * @param grid        2D array of Cell values indexed as grid[row][col].
@@ -30,10 +35,15 @@ import java.util.List;
  *                    can be checked for sunk ships. Null on computerDTO.
  */
 
+@SuppressFBWarnings(value = {"EI_EXPOSE_REP"},
+        justification = "DTO for testing requires direct mutable array access")
 public record PlayerDTO(Cell[][] grid,
                         Cell[][] homeGrid,
                         int guessesLeft,
                         GameStatus gameStatus,
                         List<Ship> ships,
                         List<Ship> homeShips
-) {}
+) implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
+}
