@@ -4,7 +4,7 @@
 
   <groupId>org.fdu</groupId>
   <artifactId>FDUBattleship</artifactId>
-  <version>1.0-DEVOPS-469</version>
+  <version>1.0-DEVOPS-554</version>
   <packaging>jar</packaging>
 
     <parent>
