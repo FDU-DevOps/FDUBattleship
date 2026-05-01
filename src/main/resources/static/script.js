@@ -207,7 +207,7 @@ async function submitAttack(row, col) {
         if (data.sunkCells) markSunkCells(BOARD_IDS.computer, data.sunkCells);
         if (data.homeSunkCells) markSunkCells(BOARD_IDS.human, data.homeSunkCells);
 
-        document.getElementById(ELEMENT_IDS.guessesLeft).innerText = `Guesses left: ${data.guessesLeft}`;
+
         document.getElementById(ELEMENT_IDS.message).innerText = data.message;
         document.getElementById(ELEMENT_IDS.computerMessage).innerText = data.computerMessage || "";
 
@@ -358,7 +358,6 @@ async function confirmPlacement() {
 
         const guessesLeft = await response.json();
 
-        document.getElementById(ELEMENT_IDS.guessesLeft).innerText = `Guesses left: ${guessesLeft}`;
         document.getElementById(ELEMENT_IDS.placementUi).style.display = "none";
 
         loadBoard(BOARD_IDS.computer, true);

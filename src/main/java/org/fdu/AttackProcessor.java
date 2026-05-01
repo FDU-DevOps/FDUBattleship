@@ -94,19 +94,16 @@ public class AttackProcessor implements Serializable {
             return new TurnResultDTO(updatedHuman, updatedComputer, sunkShip, null, -1, -1);
         }
 
-        if (guessesLeft <= 0) {
-            LOG.info("Computer wins! Player ran out of guesses.");
-            PlayerDTO updatedHuman = new PlayerDTO(newTrackingGrid, newHomeGrid, 0,
-                    GameStatus.LOSS, humanDTO.ships(), humanDTO.homeShips());
-            PlayerDTO updatedComputer = new PlayerDTO(newShipGrid, null, 0,
-                    GameStatus.WIN, computerDTO.ships(), null);
-            return new TurnResultDTO(updatedHuman, updatedComputer, sunkShip, null, -1, -1);
-        }
+
 
         // ----------------------------------------------------------------
         // Computer's random move
         // ----------------------------------------------------------------
-        int[] computerMove = pickRandomUnattackedCell(newHomeGrid);
+        List<Ship> remainingShips = humanDTO.homeShips().stream()
+                .filter(s -> !s.isSunk(newHomeGrid))
+                .collect(java.util.stream.Collectors.toList());
+        System.out.println("Remaining unsunk ships: " + remainingShips.size());
+        int[] computerMove = pickComputerMove(newHomeGrid, remainingShips);
         int computerRow = computerMove[0];
         int computerCol = computerMove[1];
 
@@ -193,21 +190,196 @@ public class AttackProcessor implements Serializable {
     }
 
     /**
-     * Selects a random cell from all cells not yet attacked on the given grid.
-     * Assumes at least one unattacked cell exists.
+     * Returns true if there are any HIT cells on the grid that belong to
+     * a ship not yet fully sunk — meaning the computer has partially hit
+     * a ship and should focus on finishing it before hunting elsewhere.
      *
-     * @param grid the human's home grid
-     * @return int[]{row, col} of the chosen cell
+     * @param grid      the human's home grid
+     * @param remaining list of unsunk player ships
+     * @return true if target mode should be active, false for hunt mode
      */
-    private int[] pickRandomUnattackedCell(Cell[][] grid) {
-        List<int[]> available = new ArrayList<>();
-        for (int r = 0; r < grid.length; r++) {
-            for (int c = 0; c < grid[r].length; c++) {
-                if (grid[r][c] != Cell.HIT && grid[r][c] != Cell.MISS) {
-                    available.add(new int[]{r, c});
+    private boolean isTargetMode(Cell[][] grid, List<Ship> remaining) {
+        // For each remaining ship, check if any of its cells are HIT
+        // If yes, the computer has a partial hit and should be in target mode
+        for (Ship ship : remaining) {
+            for (int[] cell : ship.cells()) {
+                if (grid[cell[0]][cell[1]] == Cell.HIT) {
+                    return true;
                 }
             }
         }
-        return available.get(ThreadLocalRandom.current().nextInt(available.size()));
+        return false;
     }
+
+    /**
+     * Selects the computer's next attack cell when in Target mode.
+     * Collects all unattacked neighbors of existing HIT cells.
+     * If two adjacent HITs are found (axis known), only returns
+     * neighbors along that axis to avoid wasting moves.
+     *
+     * @param grid the human's home grid
+     * @return int[]{row, col} of the chosen target cell
+     */
+    private int[] pickTargetModeCell(Cell[][] grid) {
+        List<int[]> hitCells = new ArrayList<>();
+
+        // Collect all HIT cells on the grid
+        for (int r = 0; r < grid.length; r++) {
+            for (int c = 0; c < grid[r].length; c++) {
+                if (grid[r][c] == Cell.HIT) {
+                    hitCells.add(new int[]{r, c});
+                }
+            }
+        }
+
+        // Check if two adjacent hits exist — if so, lock in the axis
+        boolean axisLocked = false;
+        boolean horizontal = false;
+        for (int[] hit : hitCells) {
+            int r = hit[0], c = hit[1];
+            // Check right neighbor
+            if (c + 1 < grid[r].length && grid[r][c + 1] == Cell.HIT) {
+                axisLocked = true;
+                horizontal = true;
+                break;
+            }
+            // Check down neighbor
+            if (r + 1 < grid.length && grid[r + 1][c] == Cell.HIT) {
+                axisLocked = true;
+                horizontal = false;
+                break;
+            }
+        }
+
+        // Collect valid candidates based on axis
+        List<int[]> candidates = new ArrayList<>();
+        for (int[] hit : hitCells) {
+            int r = hit[0], c = hit[1];
+            int[][] neighbors = axisLocked
+                    ? (horizontal
+                    ? new int[][]{{r, c - 1}, {r, c + 1}}   // horizontal axis only
+                    : new int[][]{{r - 1, c}, {r + 1, c}})  // vertical axis only
+                    : new int[][]{{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}}; // all 4
+
+            for (int[] n : neighbors) {
+                if (n[0] >= 0 && n[0] < grid.length &&
+                        n[1] >= 0 && n[1] < grid[n[0]].length &&
+                        grid[n[0]][n[1]] != Cell.HIT &&
+                        grid[n[0]][n[1]] != Cell.MISS) {
+                    candidates.add(n);
+                }
+            }
+        }
+
+        // Fallback to heat map if no candidates found
+        if (candidates.isEmpty()) {
+            return null;
+        }
+
+        return candidates.get(ThreadLocalRandom.current().nextInt(candidates.size()));
+    }
+
+    /**
+     * Orchestrates the computer's move selection by switching between
+     * Target mode (partially hit ship exists) and Hunt mode (no active hits).
+     * Target mode focuses attacks around existing hits until the ship is sunk.
+     * Hunt mode uses the heat map to find new ships.
+     *
+     * @param grid           the human's home grid
+     * @param remainingShips list of unsunk player ships
+     * @return int[]{row, col} of the chosen cell
+     */
+    private int[] pickComputerMove(Cell[][] grid, List<Ship> remainingShips) {
+        if (isTargetMode(grid, remainingShips)) {
+            LOG.debug("Computer in TARGET mode");
+            int[] targetCell = pickTargetModeCell(grid);
+            if (targetCell != null) {
+                return targetCell;
+            }
+            // Fallback to heat map if target mode yields no candidates
+            LOG.debug("Target mode found no candidates, falling back to heat map");
+        } else {
+            LOG.debug("Computer in HUNT mode");
+        }
+        return pickHeatMapCell(grid, remainingShips);
+    }
+
+    /**
+     * Selects the computer's next attack cell using a heat map algorithm.
+     * Scores every unattacked cell based on how many remaining ships could
+     * fit there horizontally or vertically without overlapping a MISS or
+     * going out of bounds. Returns the cell with the highest score.
+     * O(n^2) per remaining ship: loops all ships x all cells.
+     *
+     * @param grid      the human's home grid (current state)
+     * @param homeShips the computer's list of remaining (unsunk) player ships
+     * @return int[]{row, col} of the highest heat value cell
+     */
+    private int[] pickHeatMapCell(Cell[][] grid, List<Ship> homeShips) {
+        int[][] heatMap = new int[grid.length][grid[0].length];
+
+        // Build heat map — score each cell based on how many ships could fit there
+        for (Ship ship : homeShips) {
+            int shipLength = ship.size();
+            for (int r = 0; r < grid.length; r++) {
+                for (int c = 0; c < grid[r].length; c++) {
+                    if (grid[r][c] == Cell.HIT || grid[r][c] == Cell.MISS) continue;
+
+
+                    // Check horizontal fit
+                    if (c + shipLength <= grid[r].length) {
+                        boolean canFit = true;
+                        for (int i = 0; i < shipLength; i++) {
+                            if (grid[r][c + i] == Cell.MISS || grid[r][c + i] == Cell.HIT) { canFit = false; break; }
+                        }
+                        if (canFit) {
+                            for (int i = 0; i < shipLength; i++) heatMap[r][c + i]++;
+                        }
+                    }
+
+                    // Check vertical fit
+                    if (r + shipLength <= grid.length) {
+                        boolean canFit = true;
+                        for (int i = 0; i < shipLength; i++) {
+                            if (grid[r + i][c] == Cell.MISS || grid[r + i][c] == Cell.HIT) { canFit = false; break; }
+                        }
+                        if (canFit) {
+                            for (int i = 0; i < shipLength; i++) heatMap[r + i][c]++;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Select highest heat cell with random tie-breaking
+        int bestHeat = -1;
+        List<int[]> bestCells = new ArrayList<>();
+
+        for (int r = 0; r < heatMap.length; r++) {
+            for (int c = 0; c < heatMap[r].length; c++) {
+                if (heatMap[r][c] > bestHeat) {
+                    bestHeat = heatMap[r][c];
+                    bestCells.clear();
+                    bestCells.add(new int[]{r, c});
+                } else if (heatMap[r][c] == bestHeat) {
+                    bestCells.add(new int[]{r, c});
+                }
+            }
+        }
+
+// Fallback — if heat map is all zeros, pick any unattacked cell randomly
+        if (bestCells.isEmpty()) {
+            for (int r = 0; r < grid.length; r++) {
+                for (int c = 0; c < grid[r].length; c++) {
+                    if (grid[r][c] != Cell.HIT && grid[r][c] != Cell.MISS) {
+                        bestCells.add(new int[]{r, c});
+                    }
+                }
+            }
+        }
+
+        LOG.debug("Heat map best heat: {}, candidates: {}", bestHeat, bestCells.size());
+        return bestCells.get(ThreadLocalRandom.current().nextInt(bestCells.size()));
+    }
+
 }
