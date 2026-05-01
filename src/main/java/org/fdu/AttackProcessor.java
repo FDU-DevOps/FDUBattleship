@@ -99,9 +99,11 @@ public class AttackProcessor implements Serializable {
         // ----------------------------------------------------------------
         // Computer's random move
         // ----------------------------------------------------------------
-        List<Ship> remainingShips = humanDTO.homeShips().stream()
+        List<Ship> remainingShips = (humanDTO.homeShips() != null)
+                ? humanDTO.homeShips().stream()
                 .filter(s -> !s.isSunk(newHomeGrid))
-                .collect(java.util.stream.Collectors.toList());
+                .collect(java.util.stream.Collectors.toList())
+                : new ArrayList<>();
         System.out.println("Remaining unsunk ships: " + remainingShips.size());
         int[] computerMove = pickComputerMove(newHomeGrid, remainingShips);
         int computerRow = computerMove[0];

@@ -145,12 +145,11 @@ class AttackProcessorTest {
     }
 
     @Test
-    @DisplayName("LOSS: status is LOSS when player runs out of guesses")
-    void runningOutOfGuessesSetsLoss() {
+    @DisplayName("Guesses: guesses reach zero on final miss but game continues")
+    void runningOutOfGuessesDoesNotEndGame() {
         TurnResultDTO result = processor.processAttack(0, 0, human(1), computer());
-        assertEquals(GameStatus.LOSS, result.updatedHuman().gameStatus());
         assertEquals(0, result.updatedHuman().guessesLeft());
-        assertEquals(GameStatus.WIN, result.updatedComputer().gameStatus());
+        assertEquals(GameStatus.IN_PROGRESS, result.updatedHuman().gameStatus());
     }
 
     // -------------------------------------------------------------------------
