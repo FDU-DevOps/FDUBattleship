@@ -70,6 +70,27 @@ function handleFeedbackClick() {
     window.open(USER_FEEDBACK_LINK, "_blank");
 }
 
+function handleGameInfoClick() {
+    const modal = document.getElementById('howToPlayModal');
+    if (modal) {
+        modal.style.display = "block";
+    }
+}
+
+// Close modals via X button
+document.querySelectorAll('.close').forEach(span => {
+    span.addEventListener('click', () => {
+        span.closest('.modal').style.display = "none";
+    });
+});
+
+// Close modal by clicking dark background
+window.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal')) {
+        e.target.style.display = "none";
+    }
+});
+
 /**
  * Builds a board inside the given table element.
  * @param {string} tableId - The ID of the table element to populate.
