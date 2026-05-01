@@ -120,15 +120,20 @@ class AttackProcessorTest {
     @Test
     @DisplayName("LOSS: status is LOSS when computer sinks the last human ship")
     void computerSinksLastShipSetsLoss() {
-        // make exactly one unattacked cell, and make it a ship
+        // Fill entire homeGrid with MISS except one SHIP cell
         for (int r = 0; r < 10; r++) {
             for (int c = 0; c < 10; c++) {
                 homeGrid[r][c] = Cell.MISS;
             }
         }
-        homeGrid[5][5] = Cell.SHIP; // only possible target
+        homeGrid[5][5] = Cell.SHIP;
 
-        TurnResultDTO result = processor.processAttack(0, 0, human(5), computer());
+        // Pass the ship in homeShips so the algorithm can find it
+        List<Ship> homeShips = List.of(new Ship(List.of(new int[]{5, 5})));
+        PlayerDTO humanWithShip = new PlayerDTO(trackingGrid, homeGrid, 5,
+                GameStatus.IN_PROGRESS, null, homeShips);
+
+        TurnResultDTO result = processor.processAttack(0, 0, humanWithShip, computer());
 
         assertEquals(GameStatus.LOSS, result.updatedHuman().gameStatus());
         assertTrue(result.computerRow() >= 0);
