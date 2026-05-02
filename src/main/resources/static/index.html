@@ -46,6 +46,52 @@
     <button id="userFeedbackButton" onclick="handleFeedbackClick()">Submit Game Feedback</button>
 </div>
 
+
+<div></div>
+<div>
+    <button id="gameInfo" onClick="handleGameInfoClick()" style="margin-top:20px">
+        <span>Game Info</span>
+    </button>
+</div>
+
+<div id="howToPlayModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>How to Start the Game</h2>
+        <p>You are given a total of <b>5 ships</b> to place on your <b>10x10 battle board</b>. Ships range in size:<br><br>
+            x1 Carrier      (5 cells)<br>
+            x1 Battleship   (4 cells)<br>
+            x2 Submarines   (3 cells)<br>
+            x1 Patrol Boat  (2 cells)<br><br>
+        </p>
+        <p>
+            You can change the orientation of the ships you place by toggling the <b>Orientation Button.</b><br><br>
+            The computer player will automatically place its ships before the game begins.<br><br>
+            Once your ships have been placed, hit the <b>Start Game Button</b> to begin playing.<br><br>
+            <img src="GameInfoImages/PlayerFilledBoard_BeforeStartGame.jpg" alt="Image of player board filled with manually placed ships (ships are green)" width="600" height="600"><br>
+        </p>
+        <h2>How to Play</h2>
+        <p>
+            The player and the computer will take turns guessing the ship’s locations. The player will always go first.<br><br>
+            To make a guess, click on any cell that has not already been guessed. The goal is to sink all the opposing players' ships.<br><br>
+            Sinking a ship consists of hitting all the cells associated with a specific ship.<br>
+        </p>
+        <p>
+            Guess back and forth until one of the following conditions is met:<br><br>
+            The player sinks all the computer's ships.<br>
+            The computer sinks all the player's ships<br><br>
+        </p>
+        <h2>Board Feedback Explanation:</h2>
+        <p>
+            <img src="GameInfoImages/ComputerBoardFeedback.jpg" alt="Image of computer board with feedback (blue is water, white is miss, red is a hit, black cells are a sunk ship)" width="600" height="600"><br><br>
+            <b>Blue Cells</b> are water/blank and are guessable.<br>
+            <b>White Cells</b> are misses<br>
+            <b>Red Cells</b> are hits<br>
+            <b>Black Cells</b> show a whole sunk ship<br>
+        </p>
+    </div>
+</div>
+
 <script src="script.js"></script>
 </body>
 </html>
