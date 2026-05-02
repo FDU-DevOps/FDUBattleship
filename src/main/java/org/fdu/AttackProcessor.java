@@ -238,7 +238,8 @@ public class AttackProcessor implements Serializable {
         boolean axisLocked = false;
         boolean horizontal = false;
         for (int[] hit : hitCells) {
-            int r = hit[0], c = hit[1];
+            int r = hit[0];
+            int c = hit[1];
             // Check right neighbor
             if (c + 1 < grid[r].length && grid[r][c + 1] == Cell.HIT) {
                 axisLocked = true;
@@ -256,7 +257,8 @@ public class AttackProcessor implements Serializable {
         // Collect valid candidates based on axis
         List<int[]> candidates = new ArrayList<>();
         for (int[] hit : hitCells) {
-            int r = hit[0], c = hit[1];
+            int r = hit[0];
+            int c = hit[1];
             int[][] neighbors = axisLocked
                     ? (horizontal
                     ? new int[][]{{r, c - 1}, {r, c + 1}}   // horizontal axis only
