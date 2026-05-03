@@ -1,0 +1,95 @@
+name: Version Bump
+on:
+  pull_request:
+    # Only target pull requests that are merging into master.
+    branches: [ 'master' ]
+    # Only trigger when a PR is closed (merged or not, filtered below).
+    types: [ closed ]
+
+# Allow the workflow to write back to the repository (needed for committing the bumped version).
+permissions:
+  contents: write
+
+jobs:
+  bump_version:
+    # Only run this job if the PR was actually merged, not just closed.
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      # Pull the latest code from the branch so we have pom.xml to work with.
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          # Pass the token so the workflow has write access to push the version bump commit back to master.
+          token: ${{ secrets.GITHUB_TOKEN }}
+          #Needed for force_with_lease which the documentation recommends
+          # and I think it lets it see the previous commit to amend
+          fetch-depth: 0
+
+      # Read the labels on the merged PR and decide whether this is a major, minor, or patch bump.
+      # If no matching label is found, defaults to patch.
+      - name: Get bump type from PR label
+        id: label
+        run: |
+          LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
+          if echo "$LABELS" | grep -qi "major"; then
+            echo "type=major" >> $GITHUB_OUTPUT
+          elif echo "$LABELS" | grep -qi "minor"; then
+            echo "type=minor" >> $GITHUB_OUTPUT
+          else
+            echo "type=patch" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Extract Story ID
+        id: storyid
+        run: |
+          BRANCH="${{ github.event.pull_request.head.ref }}"
+          echo "storyid=$(echo "$BRANCH" | grep -oE "DEVOPS-[0-9]+")" >> $GITHUB_OUTPUT
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: "maven"
+
+      # Use the bump type determined above to increment the version in pom.xml.
+      # The action handles updating the version, committing, and pushing back to master automatically.
+      - name: Bump pom.xml version
+        id: bump
+        uses: nnichols/maven-version-bump-action@v5
+        with:
+          # Token required for the action to commit and push the pom.xml change.
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # Pass the bump type (major/minor/patch) from the label step.
+          type: ${{ steps.label.outputs.type }}
+
+      - name: Append Story Suffix
+        run: |
+          FULLVERSION="${{ steps.bump.outputs.version }}-${{ steps.storyid.outputs.storyid }}"
+          mvn versions:set -DnewVersion=$FULLVERSION -DgenerateBackupPoms=false
+
+      # Log the new version so it is visible in the workflow run summary.
+      - name: Print new version
+        run: echo "Bumped to version ${{ steps.bump.outputs.version }}-${{ steps.storyid.outputs.storyid }}"
+
+      # Fetch latest master so force_with_lease does not reject the push
+      - name: Fetch latest master
+        run: git fetch origin master
+
+      #https://github.com/marketplace/actions/github-action-for-committing-changes-to-a-repository
+      - name: Amend and Push
+        uses: devops-infra/action-commit-push@v1.1.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          commit_message: "Bump version to ${{ steps.bump.outputs.version }}-${{ steps.storyid.outputs.storyid }}"
+          amend: true
+          force_with_lease: true
+
+      #https://github.com/softprops/action-gh-release
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.bump.outputs.version }}-${{ steps.storyid.outputs.storyid }}
+          name: v${{ steps.bump.outputs.version }}-${{ steps.storyid.outputs.storyid }}
+          token: ${{ secrets.GITHUB_TOKEN }}
