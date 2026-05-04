@@ -1,6 +1,7 @@
 package org.fdu;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -8,12 +9,13 @@ import org.springframework.web.bind.annotation.RestController;
  * REST controller that exposes the application version via HTTP.
  */
 @RestController
+@PropertySource("classpath:version.properties")
 class VersionController {
 
     /**
      * The application version, injected from the {@code project-version} property.
      */
-    @Value("${project-version}")
+    @Value("${project-version:unknown}")
     private String version;
 
     /**
@@ -23,6 +25,19 @@ class VersionController {
      */
     @GetMapping("/api/version")
     public String getVersion() {
-        return version;
+        String localGameVersion;
+
+        // Logic check to ensure the injected version is valid
+        if (version != null && !version.equals("unknown")) {
+            localGameVersion = version;
+        } else if (version == null) {
+            // This happens if the property key is missing entirely
+            localGameVersion = "unknown-v-file-missing";
+        } else {
+            // Fallback if the value is "unknown" or otherwise unreadable
+            localGameVersion = "unknown-error";
+        }
+
+        return localGameVersion;
     }
 }
