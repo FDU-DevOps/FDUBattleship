@@ -28,7 +28,7 @@ class VersionController {
         String localGameVersion;
 
         // Logic check to ensure the injected version is valid
-        if (version != null && !version.equals("unknown")) {
+        if (version != null && !"unknown".equals(version)) {
             localGameVersion = version;
         } else if (version == null) {
             // This happens if the property key is missing entirely
