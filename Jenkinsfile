@@ -5,15 +5,11 @@ pipeline {
 
     agent any
 
-    parameters {
-        string(name: 'BRANCH_NAME', defaultValue: 'master', description: 'GitHub branch to retrieve')
-    }
-
     stages {
 
         stage('Verify Environment') {
             steps {
-                echo "Running manual retrieval for branch: ${params.BRANCH_NAME}"
+                echo "Running manual retrieval for branch: ${env.GIT_BRANCH}"
                 sh 'pwd'
                 sh 'whoami'
             }
@@ -23,7 +19,7 @@ pipeline {
             steps {
                 // Ensure a full clone so git tags are visible for versioning
                 checkout([$class: 'GitSCM',
-                    branches: [[name: "${params.BRANCH_NAME}"]],
+                    branches: [[name: "${env.GIT_BRANCH}"]],
                     userRemoteConfigs: [[url: 'https://github.com/FDU-DevOps/FDUBattleship.git']],
                     extensions: [[$class: 'CloneOption', shallow: false, noTags: false, depth: 0]]
                 ])
@@ -38,8 +34,9 @@ pipeline {
 
         stage('Build JAR') {
             steps {
-                script {
-                    def branchName = params.BRANCH_NAME
+                script {def 
+                    branchName = env.BRANCH_NAME ?: sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+
 
                     if (branchName == 'master' || branchName == 'main') {
                         // 1. Get the latest Git Tag
