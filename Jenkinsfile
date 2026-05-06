@@ -34,9 +34,9 @@ pipeline {
 
         stage('Build JAR') {
             steps {
-                script {def 
-                    branchName = env.BRANCH_NAME ?: sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
-
+                script {
+                    def branchName = env.GIT_BRANCH ?: sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+                    branchName = branchName.replace("origin/", "")
 
                     if (branchName == 'master' || branchName == 'main') {
                         // 1. Get the latest Git Tag
