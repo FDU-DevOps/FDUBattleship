@@ -37,8 +37,7 @@ public class AttackProcessor implements Serializable {
      * <p>
      * After a HIT, checks whether the struck ship is now fully sunk.
      * Win/loss resolution: player wins when all computer ship cells are gone;
-     * computer wins when all home ship cells are gone. Guesses-left loss
-     * is kept as a fallback.
+     * computer wins when all home ship cells are gone.
      * </p>
      *
      * @param row         row index of the player's attack (0-9)
@@ -46,9 +45,9 @@ public class AttackProcessor implements Serializable {
      * @param humanDTO    current human player state
      * @param computerDTO current computer state
      * @return TurnResultDTO with updated DTOs, sunk-ship references,
-     *         and the computer's move coordinates
+     * and the computer's move coordinates
      */
-    public TurnResultDTO processAttack(int row, int col, PlayerDTO humanDTO, PlayerDTO computerDTO) {
+    public TurnResultDTO processAttack(int row, int col, PlayerDTO humanDTO, PlayerDTO computerDTO, Difficulty difficulty) {
         LOG.debug("Processing turn. Player attacks row={}, col={}", row, col);
 
         // Deep-copy all grids so incoming DTOs remain immutable
@@ -76,36 +75,37 @@ public class AttackProcessor implements Serializable {
             LOG.debug("Player MISS at ({}, {})", row, col);
         }
 
-        int guessesLeft = (target == Cell.SHIP)
-                ? humanDTO.guessesLeft()
-                : humanDTO.guessesLeft() - 1;
-
-        LOG.debug("Guesses left after player's move: {}", guessesLeft);
-
         // ----------------------------------------------------------------
-        // Check if the player just won or ran out of guesses
+        // Check if the player just won
         // ----------------------------------------------------------------
         if (allShipsSunk(newShipGrid)) {
             LOG.info("Player wins! All computer ships sunk.");
-            PlayerDTO updatedHuman = new PlayerDTO(newTrackingGrid, newHomeGrid, guessesLeft,
+            PlayerDTO updatedHuman = new PlayerDTO(newTrackingGrid, newHomeGrid,
                     GameStatus.WIN, humanDTO.ships(), humanDTO.homeShips());
-            PlayerDTO updatedComputer = new PlayerDTO(newShipGrid, null, 0,
+            PlayerDTO updatedComputer = new PlayerDTO(newShipGrid, null,
                     GameStatus.LOSS, computerDTO.ships(), null);
             return new TurnResultDTO(updatedHuman, updatedComputer, sunkShip, null, -1, -1);
         }
 
 
-
         // ----------------------------------------------------------------
         // Computer's random move
         // ----------------------------------------------------------------
-        List<Ship> remainingShips = (humanDTO.homeShips() != null)
-                ? humanDTO.homeShips().stream()
+        List<Ship> remainingShips = humanDTO.homeShips().stream()
                 .filter(s -> !s.isSunk(newHomeGrid))
-                .collect(java.util.stream.Collectors.toList())
-                : new ArrayList<>();
+                .collect(java.util.stream.Collectors.toList());
+
         System.out.println("Remaining unsunk ships: " + remainingShips.size());
-        int[] computerMove = pickComputerMove(newHomeGrid, remainingShips);
+
+        int[] computerMove;
+
+        if (difficulty == Difficulty.DUMB) {
+            LOG.debug("Computer in DUMB mode");
+            computerMove = pickRandomUnattackedCell(newHomeGrid);
+        } else {
+            LOG.debug("Computer in SMART mode");
+            computerMove = pickComputerMove(newHomeGrid, remainingShips);
+        }
         int computerRow = computerMove[0];
         int computerCol = computerMove[1];
 
@@ -134,9 +134,9 @@ public class AttackProcessor implements Serializable {
             LOG.info("Computer wins! All player ships sunk.");
         }
 
-        PlayerDTO updatedHuman = new PlayerDTO(newTrackingGrid, newHomeGrid, guessesLeft,
+        PlayerDTO updatedHuman = new PlayerDTO(newTrackingGrid, newHomeGrid,
                 humanStatus, humanDTO.ships(), humanDTO.homeShips());
-        PlayerDTO updatedComputer = new PlayerDTO(newShipGrid, null, 0,
+        PlayerDTO updatedComputer = new PlayerDTO(newShipGrid, null,
                 GameStatus.IN_PROGRESS, computerDTO.ships(), null);
 
         return new TurnResultDTO(updatedHuman, updatedComputer, sunkShip, homeSunkShip, computerRow, computerCol);
@@ -249,7 +249,6 @@ public class AttackProcessor implements Serializable {
             // Check down neighbor
             if (r + 1 < grid.length && grid[r + 1][c] == Cell.HIT) {
                 axisLocked = true;
-                horizontal = false;
                 break;
             }
         }
@@ -261,8 +260,8 @@ public class AttackProcessor implements Serializable {
             int c = hit[1];
             int[][] neighbors = axisLocked
                     ? (horizontal
-                    ? new int[][]{{r, c - 1}, {r, c + 1}}   // horizontal axis only
-                    : new int[][]{{r - 1, c}, {r + 1, c}})  // vertical axis only
+                       ? new int[][]{{r, c - 1}, {r, c + 1}}   // horizontal axis only
+                       : new int[][]{{r - 1, c}, {r + 1, c}})  // vertical axis only
                     : new int[][]{{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}}; // all 4
 
             for (int[] n : neighbors) {
@@ -334,7 +333,10 @@ public class AttackProcessor implements Serializable {
                     if (c + shipLength <= grid[r].length) {
                         boolean canFit = true;
                         for (int i = 0; i < shipLength; i++) {
-                            if (grid[r][c + i] == Cell.MISS || grid[r][c + i] == Cell.HIT) { canFit = false; break; }
+                            if (grid[r][c + i] == Cell.MISS || grid[r][c + i] == Cell.HIT) {
+                                canFit = false;
+                                break;
+                            }
                         }
                         if (canFit) {
                             for (int i = 0; i < shipLength; i++) heatMap[r][c + i]++;
@@ -345,7 +347,10 @@ public class AttackProcessor implements Serializable {
                     if (r + shipLength <= grid.length) {
                         boolean canFit = true;
                         for (int i = 0; i < shipLength; i++) {
-                            if (grid[r + i][c] == Cell.MISS || grid[r + i][c] == Cell.HIT) { canFit = false; break; }
+                            if (grid[r + i][c] == Cell.MISS || grid[r + i][c] == Cell.HIT) {
+                                canFit = false;
+                                break;
+                            }
                         }
                         if (canFit) {
                             for (int i = 0; i < shipLength; i++) heatMap[r + i][c]++;
@@ -373,17 +378,44 @@ public class AttackProcessor implements Serializable {
 
 // Fallback — if heat map is all zeros, pick any unattacked cell randomly
         if (bestCells.isEmpty()) {
-            for (int r = 0; r < grid.length; r++) {
-                for (int c = 0; c < grid[r].length; c++) {
-                    if (grid[r][c] != Cell.HIT && grid[r][c] != Cell.MISS) {
-                        bestCells.add(new int[]{r, c});
-                    }
-                }
-            }
+            pickRandomUnattackedCell(grid, bestCells);
         }
 
         LOG.debug("Heat map best heat: {}, candidates: {}", bestHeat, bestCells.size());
         return bestCells.get(ThreadLocalRandom.current().nextInt(bestCells.size()));
     }
 
+
+    /**
+     * Selects a random cell from all cells not yet attacked on the given grid.
+     * Assumes at least one unattacked cell exists.
+     *
+     * @param grid the human's home grid
+     * @return int[]{row, col} of the chosen cell
+     */
+
+    private int[] pickRandomUnattackedCell(Cell[][] grid) {
+        List<int[]> available = new ArrayList<>();
+        pickRandomUnattackedCell(grid, available);
+        return available.get(ThreadLocalRandom.current().nextInt(available.size()));
+    }
+
+
+    /**
+     * Helper method that collects all unattacked cells (not HIT or MISS)
+     * from the given grid into the provided list.
+     *
+     * @param grid      the human's home grid
+     * @param bestCells list to populate with cells
+     */
+
+    private void pickRandomUnattackedCell(Cell[][] grid, List<int[]> bestCells) {
+        for (int r = 0; r < grid.length; r++) {
+            for (int c = 0; c < grid[r].length; c++) {
+                if (grid[r][c] != Cell.HIT && grid[r][c] != Cell.MISS) {
+                    bestCells.add(new int[]{r, c});
+                }
+            }
+        }
+    }
 }

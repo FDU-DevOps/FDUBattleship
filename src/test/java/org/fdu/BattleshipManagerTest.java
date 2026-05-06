@@ -37,12 +37,6 @@ class BattleshipManagerTest {
     }
 
     @Test
-    @DisplayName("Init: human starts with 30 guesses")
-    void humanStartsWithTenGuesses() {
-        assertEquals(30, manager.getHumanDTO().guessesLeft());
-    }
-
-    @Test
     @DisplayName("Init: human game status is IN_PROGRESS at game start")
     void humanStatusIsInProgress() {
         assertEquals(GameStatus.IN_PROGRESS, manager.getHumanDTO().gameStatus());
@@ -152,7 +146,7 @@ class BattleshipManagerTest {
     void setHumanDTOReplacesPreviousDTO() {
         Cell[][] blank = new Cell[10][10];
         for (Cell[] row : blank) java.util.Arrays.fill(row, Cell.WATER);
-        PlayerDTO replacement = new PlayerDTO(blank, null, 3, GameStatus.IN_PROGRESS, null, null);
+        PlayerDTO replacement = new PlayerDTO(blank, null, GameStatus.IN_PROGRESS, null, null);
 
         manager.setHumanDTO(replacement);
 
@@ -164,7 +158,7 @@ class BattleshipManagerTest {
     void setComputerDTOReplacesPreviousDTO() {
         Cell[][] blank = new Cell[10][10];
         for (Cell[] row : blank) java.util.Arrays.fill(row, Cell.WATER);
-        PlayerDTO replacement = new PlayerDTO(blank, null, 0, GameStatus.IN_PROGRESS, null, null);
+        PlayerDTO replacement = new PlayerDTO(blank, null, GameStatus.IN_PROGRESS, null, null);
 
         manager.setComputerDTO(replacement);
 

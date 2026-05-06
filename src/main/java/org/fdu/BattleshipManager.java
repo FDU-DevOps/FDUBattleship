@@ -25,10 +25,10 @@ public class BattleshipManager implements Serializable {
     private static final long serialVersionUID = 1L;
     private static final Logger LOG = LoggerFactory.getLogger(BattleshipManager.class);
 
+    private Difficulty difficulty = Difficulty.SMART;
+
     // Fixed board dimension, both axes are 10x10 throughout the entire game
     private static final int SIZE = 10;
-    // Total number of attacks the player is allowed before the game is lost
-    private static final int MAX_GUESSES = 30;
 
     static final List<Integer> FLEET_LENGTHS = List.of(5, 4, 3, 3, 2);
     private static final int TOTAL_SHIP_CELLS = FLEET_LENGTHS.stream().mapToInt(Integer::intValue).sum(); // or computed from FLEET_LENGTHS
@@ -46,7 +46,7 @@ public class BattleshipManager implements Serializable {
      * Creates a stateless BattleBoard and AttackProcessor. Builds the
      * computer's ship grid with a fleet of ships placed at random locations
      * using ThreadLocalRandom. Builds the human player's blank tracking grid
-     * with full guess count and IN_PROGRESS status.
+     * with IN_PROGRESS status.
      * </p>
      */
     public BattleshipManager() {
@@ -85,7 +85,7 @@ public class BattleshipManager implements Serializable {
          }
 
          // attacks and updates handled by per-attack processor
-         TurnResultDTO result = processor.processAttack(row, col, currentHuman, currentComputer);
+         TurnResultDTO result = processor.processAttack(row, col, currentHuman, currentComputer, getDifficulty());
          setHumanDTO(result.updatedHuman());
          setComputerDTO(result.updatedComputer());
 
@@ -112,7 +112,7 @@ public class BattleshipManager implements Serializable {
         List<Ship> homeShips = placeAllShips(homeGrid);
 
         //humanDTO.grid() is still empty, homeGrid is now filled with the random ships
-        humanDTO = new PlayerDTO(getHumanDTO().grid(), homeGrid, MAX_GUESSES,
+        humanDTO = new PlayerDTO(getHumanDTO().grid(), homeGrid,
                 GameStatus.IN_PROGRESS, new ArrayList<>(), homeShips);
     }
 
@@ -128,7 +128,7 @@ public class BattleshipManager implements Serializable {
         // --- Computer's ship grid ---
         Cell[][] compGrid = blankGrid(null);
         List<Ship> compShips = placeAllShips(compGrid);
-        computerDTO = new PlayerDTO(compGrid, null, 0, GameStatus.IN_PROGRESS, compShips, null);
+        computerDTO = new PlayerDTO(compGrid, null, GameStatus.IN_PROGRESS, compShips, null);
 
         // --- Human's home grid (blank, awaiting player placement) ---
         Cell[][] homeGrid = blankGrid(null);
@@ -136,7 +136,7 @@ public class BattleshipManager implements Serializable {
         // --- Human's tracking grid (blank) ---
         Cell[][] trackingGrid = blankGrid(null);
 
-        humanDTO = new PlayerDTO(trackingGrid, homeGrid, MAX_GUESSES,
+        humanDTO = new PlayerDTO(trackingGrid, homeGrid,
                 GameStatus.PLACEMENT, new ArrayList<>(), new ArrayList<>());
     }
 
@@ -182,7 +182,7 @@ public class BattleshipManager implements Serializable {
         // Add the new ship to the human's home ship list
         List<Ship> homeShips = new ArrayList<>(getHumanDTO().homeShips());
         homeShips.add(new Ship(cells));
-        humanDTO = new PlayerDTO(getHumanDTO().grid(), homeGrid, getHumanDTO().guessesLeft(),
+        humanDTO = new PlayerDTO(getHumanDTO().grid(), homeGrid,
                 GameStatus.PLACEMENT, getHumanDTO().ships(), homeShips);
         return true;
     }
@@ -358,7 +358,8 @@ public class BattleshipManager implements Serializable {
         return SIZE;
     }
 
-    public static int getMaxGuesses() {
-        return MAX_GUESSES;
-    }
+    public synchronized void setDifficulty(Difficulty difficulty) { this.difficulty = difficulty; }
+
+    public synchronized Difficulty getDifficulty() {return difficulty; }
+
 }

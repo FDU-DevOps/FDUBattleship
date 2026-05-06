@@ -27,8 +27,6 @@ import org.apache.logging.log4j.internal.annotation.SuppressFBWarnings;
  *                        Values: "water", "ship", "hit", "miss".
  *                        Always shows the player's own ship positions alongside
  *                        computer attacks so the player can see what has been sunk.
- * @param guessesLeft     the number of guesses the human player has remaining.
- *                        Decremented by one on each MISS by the player.
  *                        No longer the primary loss condition, kept for display purposes.
  * @param gameStatus      the current game state after both moves this turn.
  *                        One of: "IN_PROGRESS", "WIN", "LOSS".
@@ -55,7 +53,6 @@ import org.apache.logging.log4j.internal.annotation.SuppressFBWarnings;
 public record AttackResponseDTO(
         String[][] grid,
         String[][] homeGrid,
-        int guessesLeft,
         String gameStatus,
         String message,
         int computerRow,
