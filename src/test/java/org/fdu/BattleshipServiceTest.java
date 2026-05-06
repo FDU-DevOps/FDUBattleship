@@ -24,11 +24,9 @@ class BattleshipServiceTest {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("Should initialize game and return the starting guess count")
+    @DisplayName("Should initialize game")
     void testStartGame() {
-        int guesses = service.startGame(manager);
-
-        assertTrue(guesses > 0);
+        service.startGame(manager);
         assertEquals(GameStatus.IN_PROGRESS, manager.getHumanDTO().gameStatus());
     }
 

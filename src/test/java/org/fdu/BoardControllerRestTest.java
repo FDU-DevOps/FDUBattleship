@@ -48,17 +48,12 @@ class BoardControllerRestTest {
     @DisplayName("Start a new game and verify allowed guesses is correct (at Max)")
         // note: since we always reset b4 a test case, the reset will actually overwrite the original game board
     void testStartGame() {
-        // start-game returns initial number of guesses allowed
-        assertEquals (BattleshipManager.getMaxGuesses(), reset(userA));
         // retrieve the BoardManager DTOs (internal not passed to client), verify as expected & print
         PlayerDTO humanStatus = getHumanStatus(userA);
         assertNotNull(humanStatus);
-        assertEquals(BattleshipManager.getMaxGuesses(), humanStatus.guessesLeft());
         System.out.println(humanStatus);
         System.out.println(Arrays.deepToString(humanStatus.grid()));
-
         PlayerDTO computerStatus = getComputerStatus(userA);
-        assertEquals(0, computerStatus.guessesLeft());  // computer currently has no guesses
         System.out.println(computerStatus);
         System.out.println(Arrays.deepToString(computerStatus.grid()));
     }
@@ -110,32 +105,26 @@ class BoardControllerRestTest {
 
         // a hit - message contains "hit", guesses no changed, cell = HIT
         AttackResponseDTO attackResponse = attack(userA, 6, 9);
-        // get the reesult
-        PlayerDTO humanStatus = getHumanStatus(userA);
+        // get the result
+        PlayerDTO humanStatus;
         computerStatus = getComputerStatus(userA);
 
         // Assert the hit
         System.out.println("Attack(J7): " + attackResponse.message());
-        System.out.println(" Response: Guesses Left: " + attackResponse.guessesLeft());
-        System.out.println(" Human DTO: Guesses Left: " + humanStatus.guessesLeft());
         assertThat(attackResponse.message()).containsIgnoringCase("hit");
-        assertThat(attackResponse.guessesLeft()).isEqualTo(BattleshipManager.getMaxGuesses());
         assertThat(computerStatus.grid()[6][9]).isEqualTo(Cell.HIT);
 
 
         // a miss - message contains "miss", num guesses decreases by 1, cell = MISS
         AttackResponseDTO missResponse = attack(userA, 0, 0);
         PlayerDTO computerAfterMiss = getComputerStatus(userA);
-        PlayerDTO humanAfterMiss = getHumanStatus(userA);
 
         assertThat(missResponse.message()).containsIgnoringCase("miss");
-        assertThat(missResponse.guessesLeft()).isEqualTo(BattleshipManager.getMaxGuesses()-1);
-        assertThat(humanAfterMiss.guessesLeft()).isEqualTo(BattleshipManager.getMaxGuesses()-1);
         assertThat(computerAfterMiss.grid()[0][0]).isEqualTo(Cell.MISS);
 
         // a 2nd hit - use assertResponse helper function
         AttackResponseDTO hitResponse = attack(userA, 9, 9);
-        assertResponse(hitResponse, 29, "in_progress", "hit");
+        assertResponse(hitResponse, "in_progress", "hit");
 
         // print out the DTOs for reference
         computerStatus = getComputerStatus(userA);
@@ -161,19 +150,19 @@ class BoardControllerRestTest {
 
         // let's try a miss, 2 hits, a miss and another hit
         AttackResponseDTO hitResponse = attack(userA, 5, 5);
-        assertResponse(hitResponse, 29, "in_progress", "miss");
+        assertResponse(hitResponse, "in_progress", "miss");
 
         hitResponse = attack(userA, 1, 0);
-        assertResponse(hitResponse, 29, "in_progress", "hit");
+        assertResponse(hitResponse, "in_progress", "hit");
 
         hitResponse = attack(userA, 2, 0);
-        assertResponse(hitResponse, 29, "in_progress", "hit");
+        assertResponse(hitResponse, "in_progress", "hit");
 
         hitResponse = attack(userA, 9, 0);  // miss
-        assertResponse(hitResponse, 28, "in_progress", "miss");
+        assertResponse(hitResponse,"in_progress", "miss");
 
         hitResponse = attack(userA, 0, 0);  // sunk my ship
-        assertResponse(hitResponse, 28, "win", "You win");
+        assertResponse(hitResponse, "win", "You win");
 
     }
 
@@ -191,10 +180,10 @@ class BoardControllerRestTest {
 
         // valid attacks first (still 200 + AttackResponseDTO)
         AttackResponseDTO hitResponse = attack(userA, 5, 5);
-        assertResponse(hitResponse, 30, "in_progress", "hit");
+        assertResponse(hitResponse, "in_progress", "hit");
 
         AttackResponseDTO missResponse = attack(userA, 4, 4);
-        assertResponse(missResponse, 29, "in_progress", "miss");
+        assertResponse(missResponse, "in_progress", "miss");
 
         // invalid row/col -> 400 Bad Request
         userA.post().uri("/api/battleship/attack")
@@ -255,17 +244,17 @@ class BoardControllerRestTest {
 
         // 5, 5 is a hit, 0, 0 a miss
         AttackResponseDTO response = attack(userA, 5, 5);
-        assertResponse(response, 30, "in_progress", "hit");
+        assertResponse(response, "in_progress", "hit");
         // should now show 5, 5 as a hit and 4, 4 as a miss
         response = attack(userA, 0, 0);
-        assertResponse(response, 29, "in_progress", "miss");
+        assertResponse(response, "in_progress", "miss");
 
         // 0, 0 is a hit, 5, 5 a miss
         response = attack(userB, 5, 5);
-        assertResponse(response, 29, "in_progress", "miss");
+        assertResponse(response, "in_progress", "miss");
         // should now show 5, 5 as a hit and 4, 4 as a miss
         response = attack(userB, 0, 0);
-        assertResponse(response, 29, "in_progress", "hit");
+        assertResponse(response, "in_progress", "hit");
 
     }
 
@@ -356,22 +345,22 @@ class BoardControllerRestTest {
     // ----------------------   HELPER FUNCTIONS          --------------------------------
     // helper function for setting up the clients -
     private String createSessionCookie(RestTestClient client) {
-        var result = client.post().uri("/api/battleship/start-game").exchange().returnResult(String.class);
+        StartGameRequestDTO startRequest = new StartGameRequestDTO(Difficulty.DUMB);
+        var result = client.post().uri("/api/battleship/start-game").body(startRequest).exchange().returnResult(String.class);
         // Captures "JSESSIONID=XXXXX; Path=/; HttpOnly"
         return result.getResponseHeaders().getFirst("Set-Cookie");
     }
 
     // Other helper functions
-    private int reset(RestTestClient restClient) {
-        Integer responseBody = restClient.post()
+    private void reset(RestTestClient restClient) {
+        StartGameRequestDTO startRequest = new StartGameRequestDTO(Difficulty.DUMB);
+        restClient.post()
                 .uri("/api/battleship/start-game")
+                .body(startRequest)
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(Integer.class)
-                .returnResult()
-                .getResponseBody();
-        if (responseBody == null) return 0;
-        return responseBody;
+                .returnResult();
     }
 
     private AttackResponseDTO attack(RestTestClient restClient, int row, int col) {
@@ -387,12 +376,11 @@ class BoardControllerRestTest {
     }
 
     // Assertion helper
-    private void assertResponse(AttackResponseDTO response, int guessesLeft,
+    private void assertResponse(AttackResponseDTO response,
                                 String expectedStatus, String message) {
         assertThat(response)
                 .as("The server returned a null AttackResponseDTO. Check for 500 errors in the console.")
                 .isNotNull();
-        assertThat(response.guessesLeft()).isEqualTo(guessesLeft);
         assertThat(response.gameStatus()).containsIgnoringCase(expectedStatus);
         assertThat(response.message()).containsIgnoringCase(message);
     }

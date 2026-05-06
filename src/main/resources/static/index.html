@@ -17,6 +17,17 @@
     <p id="placement-label">Place your Carrier (5 cells)</p>
     <button id="toggleOrientation" onclick="toggleOrientation()">Orientation: Horizontal</button>
     <button id="confirmPlacement" onclick="confirmPlacement()" disabled>Start Game</button>
+    <div id="difficulty-ui">
+        <label for="difficulty">Difficulty:</label>
+        <select id="difficulty">
+            <option value="SMART" selected>Smart</option>
+            <option value="DUMB">Dumb</option>
+        </select>
+    </div>
+</div>
+
+<div id="difficulty-display" style="display:none;">
+    Difficulty: <span id="difficulty-value"></span>
 </div>
 
 <div class="boards-container">

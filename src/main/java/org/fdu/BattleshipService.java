@@ -37,13 +37,13 @@ public class BattleshipService {
      * <p>
      * If no valid placed fleet exists, initializes a full random game state.
      * If manual placement is already complete, transitions the human status
-     * to {@link GameStatus#IN_PROGRESS} and resets guesses for active play.
+     * to {@link GameStatus#IN_PROGRESS}
      * </p>
      *
      * @param manager session-scoped game manager
-     * @return current number of guesses available to the player
+     *
      */
-    public int startGame(BattleshipManager manager) {
+    public void startGame(BattleshipManager manager) {
         LOG.debug("startGame called");
         if (manager.getHumanDTO() == null || !manager.isPlacementComplete()) {
             LOG.debug("Initializing random game");
@@ -52,12 +52,10 @@ public class BattleshipService {
             LOG.debug("Using manually placed ships, switching status to IN_PROGRESS");
             PlayerDTO human = manager.getHumanDTO();
             manager.setHumanDTO(new PlayerDTO(
-                    human.grid(), human.homeGrid(), BattleshipManager.getMaxGuesses(),
+                    human.grid(), human.homeGrid(),
                     GameStatus.IN_PROGRESS, human.ships(), human.homeShips()
             ));
         }
-        LOG.info("Game started with {} guesses", manager.getHumanDTO().guessesLeft());
-        return manager.getHumanDTO().guessesLeft();
     }
 
     /**
@@ -129,7 +127,7 @@ public class BattleshipService {
         }
 
         return new AttackResponseDTO(
-                null, updatedGrid, 0, status, "Ship placed",
+                null, updatedGrid, status, "Ship placed",
                 NO_COORD, NO_COORD, "", null, null
         );
     }
@@ -185,8 +183,7 @@ public class BattleshipService {
         String playerMessage = buildPlayerMessage(turn, row, col);
         String computerMessage = buildComputerMessage(turn);
 
-        LOG.debug("Turn completed. guessesLeft={}, status={}",
-                turn.updatedHuman().guessesLeft(),
+        LOG.debug("Turn completed. status={}",
                 turn.updatedHuman().gameStatus());
 
         if (turn.updatedHuman().gameStatus() == GameStatus.WIN) {
@@ -198,7 +195,6 @@ public class BattleshipService {
         return new AttackResponseDTO(
                 convertGrid(turn.updatedHuman().grid()),
                 convertGrid(turn.updatedHuman().homeGrid()),
-                turn.updatedHuman().guessesLeft(),
                 turn.updatedHuman().gameStatus().name(),
                 playerMessage,
                 turn.computerRow(),
