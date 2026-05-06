@@ -327,8 +327,9 @@ public class AttackProcessor implements Serializable {
             int shipLength = ship.size();
             for (int r = 0; r < grid.length; r++) {
                 for (int c = 0; c < grid[r].length; c++) {
-                    if (grid[r][c] == Cell.HIT || grid[r][c] == Cell.MISS) continue;
-
+                    if (grid[r][c] == Cell.HIT || grid[r][c] == Cell.MISS) {
+                        continue;
+                    }
 
                     // Check horizontal fit
                     if (c + shipLength <= grid[r].length) {
@@ -340,7 +341,9 @@ public class AttackProcessor implements Serializable {
                             }
                         }
                         if (canFit) {
-                            for (int i = 0; i < shipLength; i++) heatMap[r][c + i]++;
+                            for (int i = 0; i < shipLength; i++) {
+                                heatMap[r][c + i]++;
+                            }
                         }
                     }
 
@@ -354,7 +357,9 @@ public class AttackProcessor implements Serializable {
                             }
                         }
                         if (canFit) {
-                            for (int i = 0; i < shipLength; i++) heatMap[r + i][c]++;
+                            for (int i = 0; i < shipLength; i++) {
+                                heatMap[r + i][c]++;
+                            }
                         }
                     }
                 }
