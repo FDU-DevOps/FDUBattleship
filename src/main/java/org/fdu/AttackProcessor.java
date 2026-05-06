@@ -44,6 +44,7 @@ public class AttackProcessor implements Serializable {
      * @param col         column index of the player's attack (0-9)
      * @param humanDTO    current human player state
      * @param computerDTO current computer state
+     * @param difficulty  the difficulty used to determine if the random or heatmap attack method should be used.
      * @return TurnResultDTO with updated DTOs, sunk-ship references,
      * and the computer's move coordinates
      */

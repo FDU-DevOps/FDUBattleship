@@ -49,7 +49,7 @@ public class BoardController {
      * @param session HTTP session containing per-user game state
      */
     @PostMapping("/start-game")
-    public ResponseEntity<Integer> startGame(@RequestBody StartGameRequestDTO request,
+    public void startGame(@RequestBody StartGameRequestDTO request,
             HttpSession session
     ) {
         LOG.debug("POST /api/battleship/start-game difficulty={}", request.difficulty());
@@ -57,7 +57,6 @@ public class BoardController {
         manager.setDifficulty(request.difficulty());
         session.setAttribute("game", manager);
         battleshipService.startGame(manager);
-        return ResponseEntity.ok().build();
     }
 
     /**

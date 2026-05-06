@@ -358,8 +358,12 @@ public class BattleshipManager implements Serializable {
         return SIZE;
     }
 
-    public synchronized void setDifficulty(Difficulty difficulty) { this.difficulty = difficulty; }
+    public synchronized void setDifficulty(Difficulty difficulty) {
+        this.difficulty = difficulty;
+    }
 
-    public synchronized Difficulty getDifficulty() {return difficulty; }
+    public synchronized Difficulty getDifficulty() {
+        return difficulty;
+    }
 
 }
