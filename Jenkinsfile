@@ -61,7 +61,7 @@ pipeline {
 
                     // 3. Run the build and INJECT the version
                     withMaven(maven: 'Maven') {
-                        sh "mvn clean package -Dmaven.compiler.release=21 -Dproject.version=${globalAppVersion}"=${globalAppVersion}"
+                        sh "mvn clean package -Dmaven.compiler.release=21 -Dproject.version=${globalAppVersion}"
                     }
                 }
             }
