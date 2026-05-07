@@ -25,19 +25,6 @@ class VersionController {
      */
     @GetMapping("/api/version")
     public String getVersion() {
-        String localGameVersion;
-
-        // Logic check to ensure the injected version is valid
-        if (version != null && !"unknown".equals(version)) {
-            localGameVersion = version;
-        } else if (version == null) {
-            // This happens if the property key is missing entirely
-            localGameVersion = "unknown-v-file-missing";
-        } else {
-            // Fallback if the value is "unknown" or otherwise unreadable
-            localGameVersion = "unknown-error";
-        }
-
-        return localGameVersion;
+        return version; //literally impossible to be null, so I can just return the value as it will default to unknown.
     }
 }
