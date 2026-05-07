@@ -4,7 +4,7 @@ on:
   pull_request:   # when pull request is closed, trigger this workflow
     types: [closed]
     branches:
-      - master
+      - main
 
 jobs:
   create_tag:
