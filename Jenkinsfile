@@ -15,16 +15,15 @@ pipeline {
             }
         }
 
-        stage('Checkout Branch') {
-            steps {
-                // Ensure a full clone so git tags are visible for versioning
-                checkout([$class: 'GitSCM',
-                    branches: [[name: "${env.GIT_BRANCH}"]],
-                    userRemoteConfigs: [[url: 'https://github.com/FDU-DevOps/FDUBattleship.git']],
-                    extensions: [[$class: 'CloneOption', shallow: false, noTags: false, depth: 0]]
-                ])
-            }
-        }
+        stage('Checkout') {
+    steps {
+        checkout([$class: 'GitSCM',
+            branches: scm.branches,
+            userRemoteConfigs: scm.userRemoteConfigs,
+            extensions: scm.extensions + [[$class: 'CloneOption', shallow: false, noTags: false, depth: 0]]
+        ])
+    }
+}
 
         stage('Verify Retrieved Files') {
             steps {
