@@ -12,7 +12,7 @@ import java.util.concurrent.ThreadLocalRandom;
 /**
  * Stateless service responsible for resolving a single Battleship turn.
  * <p>
- * Receives the player's guess coordinates along with both {@link PlayerDTO}
+ * Receives the player's guess coordinates along with both {@link PlayerDTO} just change something
  * instances, resolves whether the attack is a HIT, MISS, or ship-sunk event,
  * fires the computer's random counter-attack,
  * and returns a {@link TurnResultDTO}
