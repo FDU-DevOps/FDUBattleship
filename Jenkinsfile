@@ -45,7 +45,7 @@ pipeline {
                             globalAppVersion = globalAppVersion.replace('v', '')
                         } catch (Exception e) {
                             // Fallback if no tag exists yet
-                            globalAppVersion = "1.0.0-${env.BUILD_NUMBER}"
+                            globalAppVersion = "1.0.0-untagged"
                         }
                     } else {
                         // 2. Format for branches (e.g., feature-logic-b42)
