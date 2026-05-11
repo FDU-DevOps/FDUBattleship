@@ -22,23 +22,23 @@ pipeline {
         }
         stage('Clean Releases Folder') {
             steps {
-                sh 'rm -f /opt/battleship/test/releases/FDUBattleship-*.jar'
+                sh 'rm -f /opt/battleship/test/blue-green/releases/FDUBattleship-*.jar'
             }
         }
         stage('Copy JAR to Releases') {
             steps {
-                sh 'cp target/FDUBattleship-*.jar /opt/battleship/test/releases/'
+                sh 'cp target/FDUBattleship-*.jar /opt/battleship/test/blue-green/releases/'
             }
         }
         // Just to see what is in the releases directory
         stage('Verify Releases Directory') {
             steps {
-                sh 'ls -la /opt/battleship/test/releases/'
+                sh 'ls -la /opt/battleship/test/blue-green/releases/'
             }
         }
         stage('Trigger Deployment') {
             steps {
-                sh 'touch /opt/battleship/test/releases/.deploy-trigger'
+                sh 'touch /opt/battleship/test/blue-green/releases/.deploy-trigger'
             }
         }
     }
