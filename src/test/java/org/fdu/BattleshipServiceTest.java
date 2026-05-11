@@ -97,7 +97,6 @@ class BattleshipServiceTest {
     void testInvalidPlacement() {
         service.startPlacement(manager);
 
-        // Try to place a 5-cell ship starting at index 8 (will go off board)
         PlaceShipRequestDTO request = new PlaceShipRequestDTO(8, 8, 5, true);
 
         IllegalStateException ex = assertThrows(
@@ -106,10 +105,6 @@ class BattleshipServiceTest {
         );
         assertEquals("Cannot place ship at requested position", ex.getMessage());
     }
-
-    // -------------------------------------------------------------------------
-    // Utility Tests
-    // -------------------------------------------------------------------------
 
     @Test
     @DisplayName("Should convert Cell enum grid to lowercase String grid")
