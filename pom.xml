@@ -22,6 +22,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
+    <revision>1.0.0-SNAPSHOT</revision>
   </properties>
 
   <dependencies>
@@ -51,11 +52,24 @@
   </dependencies>
 
   <build>
+      <resources>
+          <resource>
+              <directory>src/main/resources</directory>
+              <filtering>true</filtering>
+          </resource>
+      </resources>
     <plugins>
         <!-- Spring boot plugin -->
         <plugin>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-maven-plugin</artifactId>
+            <executions>
+                <execution>
+                    <goals>
+                        <goal>build-info</goal>
+                    </goals>
+                </execution>
+            </executions>
         </plugin>
 
       <!-- Ensure JUnit 5 runs correctly -->
