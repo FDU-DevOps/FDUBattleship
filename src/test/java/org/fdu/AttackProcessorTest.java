@@ -35,69 +35,55 @@ class AttackProcessorTest {
         homeGrid[6][6] = Cell.SHIP;
     }
 
-    private PlayerDTO human(int guesses) {
-        return new PlayerDTO(trackingGrid, homeGrid, guesses, GameStatus.IN_PROGRESS, null, null);
+    private PlayerDTO human() {
+        return new PlayerDTO(trackingGrid, homeGrid, GameStatus.IN_PROGRESS, null, List.of());
     }
 
     private PlayerDTO computer() {
-        return new PlayerDTO(shipGrid, null, 0, GameStatus.IN_PROGRESS, null, null);
+        return new PlayerDTO(shipGrid, null, GameStatus.IN_PROGRESS, null, List.of());
     }
 
     @Test
     @DisplayName("HIT: tracking grid cell is updated to HIT")
     void hitUpdatesTrackingGrid() {
-        TurnResultDTO result = processor.processAttack(2, 3, human(10), computer());
+        TurnResultDTO result = processor.processAttack(2, 3, human(), computer(), Difficulty.DUMB);
         assertEquals(Cell.HIT, result.updatedHuman().grid()[2][3]);
     }
 
     @Test
     @DisplayName("HIT: ship grid cell is updated to HIT")
     void hitUpdatesShipGrid() {
-        TurnResultDTO result = processor.processAttack(2, 3, human(10), computer());
+        TurnResultDTO result = processor.processAttack(2, 3, human(), computer(), Difficulty.DUMB);
         assertEquals(Cell.HIT, result.updatedComputer().grid()[2][3]);
     }
 
     @Test
     @DisplayName("HIT: human game status is WIN when last computer ship is sunk")
     void hitSetsHumanStatusToWin() {
-        TurnResultDTO result = processor.processAttack(2, 3, human(10), computer());
+        TurnResultDTO result = processor.processAttack(2, 3, human(), computer(), Difficulty.DUMB);
         assertEquals(GameStatus.WIN, result.updatedHuman().gameStatus());
-    }
-
-    @Test
-    @DisplayName("HIT: guesses remaining are unchanged after hitting a ship")
-    void hitDoesNotDecrementGuesses() {
-        TurnResultDTO result = processor.processAttack(2, 3, human(7), computer());
-        assertEquals(7, result.updatedHuman().guessesLeft());
     }
 
     @Test
     @DisplayName("HIT: status stays IN_PROGRESS when computer ships still remain")
     void hitKeepsInProgressWhenShipsRemain() {
         shipGrid[7][7] = Cell.SHIP;
-        TurnResultDTO result = processor.processAttack(2, 3, human(10), computer());
+        TurnResultDTO result = processor.processAttack(2, 3, human(), computer(), Difficulty.DUMB);
         assertEquals(GameStatus.IN_PROGRESS, result.updatedHuman().gameStatus());
     }
 
     @Test
     @DisplayName("MISS: tracking grid cell is updated to MISS")
     void missUpdatesTrackingGrid() {
-        TurnResultDTO result = processor.processAttack(0, 0, human(5), computer());
+        TurnResultDTO result = processor.processAttack(0, 0, human(), computer(), Difficulty.DUMB);
         assertEquals(Cell.MISS, result.updatedHuman().grid()[0][0]);
     }
 
     @Test
     @DisplayName("MISS: ship grid cell is updated to MISS")
     void missUpdatesShipGrid() {
-        TurnResultDTO result = processor.processAttack(0, 0, human(5), computer());
+        TurnResultDTO result = processor.processAttack(0, 0, human(), computer(), Difficulty.DUMB);
         assertEquals(Cell.MISS, result.updatedComputer().grid()[0][0]);
-    }
-
-    @Test
-    @DisplayName("MISS: guesses remaining are decremented by one")
-    void missDecrementsGuesses() {
-        TurnResultDTO result = processor.processAttack(0, 0, human(5), computer());
-        assertEquals(4, result.updatedHuman().guessesLeft());
     }
 
     @Test
@@ -106,13 +92,13 @@ class AttackProcessorTest {
         homeGrid[7][7] = Cell.SHIP;
         homeGrid[9][9] = Cell.SHIP; // extra ship so computer can't win in one move
 
-        TurnResultDTO result = processor.processAttack(0, 0, human(3), computer());
+        TurnResultDTO result = processor.processAttack(0, 0, human(), computer(), Difficulty.DUMB);
         assertEquals(GameStatus.IN_PROGRESS, result.updatedHuman().gameStatus());
     }
     @Test
     @DisplayName("MISS: computer fires and coordinates are recorded in TurnResult")
     void missRecordsComputerMoveCoordinates() {
-        TurnResultDTO result = processor.processAttack(0, 0, human(5), computer());
+        TurnResultDTO result = processor.processAttack(0, 0, human(), computer(), Difficulty.DUMB);
         assertTrue(result.computerRow() >= 0);
         assertTrue(result.computerCol() >= 0);
     }
@@ -130,10 +116,10 @@ class AttackProcessorTest {
 
         // Pass the ship in homeShips so the algorithm can find it
         List<Ship> homeShips = List.of(new Ship(List.of(new int[]{5, 5})));
-        PlayerDTO humanWithShip = new PlayerDTO(trackingGrid, homeGrid, 5,
+        PlayerDTO humanWithShip = new PlayerDTO(trackingGrid, homeGrid,
                 GameStatus.IN_PROGRESS, null, homeShips);
 
-        TurnResultDTO result = processor.processAttack(0, 0, humanWithShip, computer());
+        TurnResultDTO result = processor.processAttack(0, 0, humanWithShip, computer(), Difficulty.DUMB);
 
         assertEquals(GameStatus.LOSS, result.updatedHuman().gameStatus());
         assertTrue(result.computerRow() >= 0);
@@ -144,17 +130,9 @@ class AttackProcessorTest {
     @Test
     @DisplayName("LOSS: computer does not fire if player wins on their turn")
     void computerDoesNotFireAfterPlayerWins() {
-        TurnResultDTO result = processor.processAttack(2, 3, human(10), computer());
+        TurnResultDTO result = processor.processAttack(2, 3, human(), computer(), Difficulty.DUMB);
         assertEquals(-1, result.computerRow());
         assertEquals(-1, result.computerCol());
-    }
-
-    @Test
-    @DisplayName("Guesses: guesses reach zero on final miss but game continues")
-    void runningOutOfGuessesDoesNotEndGame() {
-        TurnResultDTO result = processor.processAttack(0, 0, human(1), computer());
-        assertEquals(0, result.updatedHuman().guessesLeft());
-        assertEquals(GameStatus.IN_PROGRESS, result.updatedHuman().gameStatus());
     }
 
     // -------------------------------------------------------------------------

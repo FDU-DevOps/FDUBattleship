@@ -22,9 +22,6 @@ import java.util.List;
  *                    or HIT cells.
  * @param homeGrid    The human player's home board, where computer attacks land.
  *                    Contains SHIP, WATER, HIT, MISS. Null on computerDTO.
- * @param guessesLeft The number of guesses the human player has remaining.
- *                    Decremented by one after each MISS. Set to 0 on
- *                    computerDTO as it is unused for the computer side.
  * @param gameStatus  The current status of the game: IN_PROGRESS, WIN, or LOSS.
  * @param ships       list of Ship objects on this DTO's primary grid.
  *                    For computerDTO: the computer's fleet on its ship grid.
@@ -39,7 +36,6 @@ import java.util.List;
         justification = "DTO for testing requires direct mutable array access")
 public record PlayerDTO(Cell[][] grid,
                         Cell[][] homeGrid,
-                        int guessesLeft,
                         GameStatus gameStatus,
                         List<Ship> ships,
                         List<Ship> homeShips

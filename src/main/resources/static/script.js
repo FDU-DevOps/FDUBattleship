@@ -367,7 +367,15 @@ async function placeShipAtCell(row, col) {
 
 async function confirmPlacement() {
     try {
-        const response = await fetch(API_PATHS.startGame, { method: "POST" });
+        const difficulty = document.getElementById("difficulty").value;
+
+        const response = await fetch(API_PATHS.startGame, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ difficulty })
+        });
 
         if (!response.ok) {
             let detail = `Request failed with status ${response.status}`;
@@ -381,9 +389,9 @@ async function confirmPlacement() {
             return;
         }
 
-        const guessesLeft = await response.json();
-
-        document.getElementById(ELEMENT_IDS.placementUi).style.display = "none";
+        document.getElementById("placement-ui").style.display = "none";
+        document.getElementById("difficulty-display").style.display = "block";
+        document.getElementById("difficulty-value").innerHTML = `<b>${difficulty}</b>`;
 
         loadBoard(BOARD_IDS.computer, true);
     } catch (error) {

@@ -44,20 +44,21 @@ public class BoardController {
      * Starts gameplay for the current session.
      * <p>
      * Creates a manager if absent, delegates startup logic to service,
-     * stores the manager back into session, and returns guesses available.
+     * stores the manager back into session, gets the information from the StartGameRequestDTO
+     * on what the difficulty should be. Returns empty body with .build()
      * </p>
-     *
+     * @param request stores the options selected by the player during placement, such as difficulty
      * @param session HTTP session containing per-user game state
-     * @return remaining guesses for active game
      */
     @PostMapping("/start-game")
-    public ResponseEntity<Integer> startGame(HttpSession session) {
-        LOG.debug("POST /api/battleship/start-game");
+    public void startGame(@RequestBody StartGameRequestDTO request,
+            HttpSession session
+    ) {
+        LOG.debug("POST /api/battleship/start-game difficulty={}", request.difficulty());
         BattleshipManager manager = getOrCreateManager(session);
-        int guessesLeft = battleshipService.startGame(manager);
+        manager.setDifficulty(request.difficulty());
         session.setAttribute("game", manager);
-        LOG.debug("Game stored in session. guessesLeft={}", guessesLeft);
-        return ResponseEntity.ok(guessesLeft);
+        battleshipService.startGame(manager);
     }
 
     /**
@@ -122,7 +123,6 @@ public class BoardController {
         AttackResponseDTO safeResponse = new AttackResponseDTO(
                 maskedGrid,
                 response.homeGrid(),
-                response.guessesLeft(),
                 response.gameStatus(),
                 response.message(),
                 response.computerRow(),
