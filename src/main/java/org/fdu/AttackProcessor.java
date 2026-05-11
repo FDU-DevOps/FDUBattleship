@@ -223,14 +223,15 @@ public class AttackProcessor implements Serializable {
      * @param grid the human's home grid
      * @return int[]{row, col} of the chosen target cell
      */
-    private int[] pickTargetModeCell(Cell[][] grid) {
+    private int[] pickTargetModeCell(Cell[][] grid, List<Ship> remainingShips) {
         List<int[]> hitCells = new ArrayList<>();
 
-        // Collect all HIT cells on the grid
-        for (int r = 0; r < grid.length; r++) {
-            for (int c = 0; c < grid[r].length; c++) {
-                if (grid[r][c] == Cell.HIT) {
-                    hitCells.add(new int[]{r, c});
+        // Collect only HIT cells belonging to remaining unsunk ships
+        // Prevents sunk ship HIT cells from polluting the target list
+        for (Ship ship : remainingShips) {
+            for (int[] cell : ship.cells()) {
+                if (grid[cell[0]][cell[1]] == Cell.HIT) {
+                    hitCells.add(cell);
                 }
             }
         }
@@ -296,7 +297,7 @@ public class AttackProcessor implements Serializable {
     private int[] pickComputerMove(Cell[][] grid, List<Ship> remainingShips) {
         if (isTargetMode(grid, remainingShips)) {
             LOG.debug("Computer in TARGET mode");
-            int[] targetCell = pickTargetModeCell(grid);
+            int[] targetCell = pickTargetModeCell(grid, remainingShips);
             if (targetCell != null) {
                 return targetCell;
             }
