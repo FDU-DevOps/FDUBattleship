@@ -43,5 +43,3 @@ Finally, open a browser and go to either localhost:8090 or 127.0.0.1:8090
   * Full code refactor. Improved error handling, thread safety, and architecture.
 * Version 1.0-DEVOPS-554
   * Add Battleship browser tab favicon.
-# Current Known Bugs
-* DEVOPS-509 - Manual build fails to start new build (old build continues to run on server)
