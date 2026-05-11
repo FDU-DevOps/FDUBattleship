@@ -23,7 +23,7 @@ pipeline {
         stage('Copy to Test Directory') {
             steps {
                 sh 'mkdir -p /opt/battleship/test'
-                sh 'rm -rf /opt/battleship/test/*'
+                sh 'rm -f /opt/battleship/test/*.jar'
                 sh 'cp target/*.jar /opt/battleship/test/'
             }
         }
