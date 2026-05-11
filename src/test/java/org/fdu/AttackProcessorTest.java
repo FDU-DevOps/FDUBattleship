@@ -191,42 +191,24 @@ class AttackProcessorTest {
         Ship ship = new Ship(List.of(new int[]{0, 0}, new int[]{0, 1}, new int[]{0, 2}));
         assertEquals(3, ship.size());
     }
-    @Test
-@DisplayName("TARGET MODE: computer follows up on partial hit and does not wander to sunk ship cells")
-void computerStaysOnPartialHitAfterSinkingAnotherShip() {
-    // Set up two ships on homeGrid
-    // Ship 1: already fully sunk at row 0, col 0
-    homeGrid[0][0] = Cell.HIT; // already sunk
+@Test
+@DisplayName("TARGET MODE: computer attacks neighbor of partial hit, not sunk ship area")
+void computerStaysOnPartialHit() {
+    homeGrid[0][0] = Cell.HIT; // sunk ship
+    homeGrid[5][5] = Cell.HIT; // partial hit
+    homeGrid[5][6] = Cell.SHIP;
 
-    // Ship 2: partially hit at row 5, col 5 — still alive
-    homeGrid[5][5] = Cell.HIT;  // partially hit
-    homeGrid[5][6] = Cell.SHIP; // remaining cell of ship 2
-
-    // homeShips: Ship 1 is sunk, Ship 2 is partially hit
     List<Ship> homeShips = List.of(
-        new Ship(List.of(new int[]{0, 0})),             // fully sunk
-        new Ship(List.of(new int[]{5, 5}, new int[]{5, 6})) // partially hit
+        new Ship(List.of(new int[]{0, 0})),
+        new Ship(List.of(new int[]{5, 5}, new int[]{5, 6}))
     );
 
-    PlayerDTO humanWithShips = new PlayerDTO(trackingGrid, homeGrid, 10,
-            GameStatus.IN_PROGRESS, null, homeShips);
+    PlayerDTO h = new PlayerDTO(trackingGrid, homeGrid, 10, GameStatus.IN_PROGRESS, null, homeShips);
+    TurnResultDTO result = processor.processAttack(0, 0, h, computer());
 
-    TurnResultDTO result = processor.processAttack(0, 0, humanWithShips, computer());
-
-    // Computer should attack adjacent to the partial hit at (5,5)
-    // Valid neighbors are (5,6) — already a ship cell, (4,5), (6,5)
-    // It should NOT attack near (0,0) which belongs to the sunk ship
-    int compRow = result.computerRow();
-    int compCol = result.computerCol();
-
-    // Must be adjacent to (5,5) — the only unsunk partial hit
-    boolean adjacentToPartialHit =
-            (compRow == 5 && compCol == 6) ||  // right
-            (compRow == 4 && compCol == 5) ||  // up
-            (compRow == 6 && compCol == 5);    // down
-
-    assertTrue(adjacentToPartialHit,
-            "Computer should target neighbors of the partial hit, not the sunk ship area. " +
-            "Attacked: (" + compRow + ", " + compCol + ")");
+    int r = result.computerRow();
+    int c = result.computerCol();
+    boolean nearPartialHit = (r==4&&c==5)||(r==6&&c==5)||(r==5&&c==4)||(r==5&&c==6);
+    assertTrue(nearPartialHit, "Got: (" + r + ", " + c + ")");
 }
 }
