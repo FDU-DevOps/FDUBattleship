@@ -20,22 +20,25 @@ pipeline {
                 }
             }
         }
-        stage('Copy to Test Directory') {
+        stage('Clean Releases Folder') {
             steps {
-                sh 'mkdir -p /opt/battleship/test'
-                sh 'rm -rf /opt/battleship/test/*'
-                sh 'cp target/*.jar /opt/battleship/test/'
+                sh 'rm -f /opt/battleship/test/blue-green/releases/FDUBattleship-*.jar'
             }
         }
-        stage('Verify Deployment Directory') {
+        stage('Copy JAR to Releases') {
             steps {
-                sh 'ls -la /opt/battleship/test'
+                sh 'cp target/FDUBattleship-*.jar /opt/battleship/test/blue-green/releases/'
             }
         }
-       stage('Trigger Service') {
+        // Just to see what is in the releases directory
+        stage('Verify Releases Directory') {
             steps {
-            // signal systemd to restart the app
-                sh 'touch /opt/battleship/test/.restart-trigger'
+                sh 'ls -la /opt/battleship/test/blue-green/releases/'
+            }
+        }
+        stage('Trigger Deployment') {
+            steps {
+                sh 'touch /opt/battleship/test/blue-green/releases/.deploy-trigger'
             }
         }
     }
