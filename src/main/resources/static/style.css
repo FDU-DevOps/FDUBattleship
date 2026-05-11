@@ -54,6 +54,11 @@ td, th {
     outline-offset: -3px;
 }
 
+.revealed {
+    background-color: #e67e22;
+    color: white;
+    font-weight: bold;
+}
 /* Places both boards side-by-side with spacing */
 .boards-container {
     display: flex;

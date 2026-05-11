@@ -130,7 +130,7 @@ public class BattleshipService {
 
         return new AttackResponseDTO(
                 null, updatedGrid, 0, status, "Ship placed",
-                NO_COORD, NO_COORD, "", null, null
+                NO_COORD, NO_COORD, "", null, null, null, null
         );
     }
 
@@ -205,7 +205,8 @@ public class BattleshipService {
                 turn.computerCol(),
                 computerMessage,
                 shipToCoords(turn.sunkShip()),
-                shipToCoords(turn.homeSunkShip())
+                shipToCoords(turn.homeSunkShip()),
+                null, null
         );
     }
 
