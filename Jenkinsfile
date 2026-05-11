@@ -27,6 +27,7 @@ pipeline {
                sh 'cp target/*.jar /opt/battleship/test/'
            }
        }
+
         stage('Verify Deployment Directory') {
             steps {
                 sh 'ls -la /opt/battleship/test'
