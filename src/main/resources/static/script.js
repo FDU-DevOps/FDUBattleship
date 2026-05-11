@@ -234,6 +234,10 @@ async function submitAttack(row, col) {
 
         if (data.gameStatus !== GAME_STATUS_IN_PROGRESS) {
             gameOver = true;
+            if (data.gameStatus === "LOSS") {
+                revealShips(BOARD_IDS.computer, data.revealedComputerShips);
+                revealShips(BOARD_IDS.human, data.revealedPlayerShips);
+            }
         }
     } catch (error) {
         document.getElementById(ELEMENT_IDS.message).innerText = "Network error. Please try again.";
@@ -395,7 +399,24 @@ async function confirmPlacement() {
         console.error(error);
     }
 }
-
+/**
+ * Reveals hidden ship cells on both boards when the game ends in a LOSS.
+ * Skips cells already marked as hit, miss, or sunk.
+ *
+ * @param {string} tableId - The ID of the board table to update.
+ * @param {number[][]} cells - Array of [row, col] pairs for hidden ship cells.
+ */
+function revealShips(tableId, cells) {
+    if (!cells) return;
+    const table = document.getElementById(tableId);
+    for (const [r, c] of cells) {
+        const cell = table.rows[r + HEADER_OFFSET].cells[c + HEADER_OFFSET];
+        if (cell.className !== "hit" && cell.className !== "miss" && !cell.classList.contains("sunk")) {
+            cell.className = "revealed";
+            cell.textContent = CELL_TEXT.hit;
+        }
+    }
+}
 // On page load: start a new game, build both boards, and show the player's ships
 window.onload = async function () {
     try {

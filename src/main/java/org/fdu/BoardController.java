@@ -5,6 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * REST controller exposing the Battleship HTTP API.
@@ -104,6 +106,18 @@ public class BoardController {
         BattleshipManager manager = (BattleshipManager) session.getAttribute("game");
         AttackResponseDTO response = battleshipService.processAttack(request, manager);
         session.setAttribute("game", manager);
+
+// Collect revealed ships BEFORE masking so we can see actual SHIP cells
+        int[][] revealedComputerShips = null;
+        int[][] revealedPlayerShips = null;
+        if ("LOSS".equals(response.gameStatus())) {
+            BattleshipManager mgr = (BattleshipManager) session.getAttribute("game");
+            revealedComputerShips = collectRemainingShips(
+                    battleshipService.convertGrid(mgr.getComputerDTO().grid())
+            );
+            revealedPlayerShips = collectRemainingShips(response.homeGrid());
+        }
+
         String[][] maskedGrid = maskComputerGrid(response.grid());
 
         AttackResponseDTO safeResponse = new AttackResponseDTO(
@@ -115,7 +129,9 @@ public class BoardController {
                 response.computerCol(),
                 response.computerMessage(),
                 response.sunkCells(),
-                response.homeSunkCells()
+                response.homeSunkCells(),
+                revealedComputerShips,
+                revealedPlayerShips
         );
         return ResponseEntity.ok(safeResponse);
     }
@@ -163,5 +179,25 @@ public class BoardController {
             }
         }
         return masked;
+    }
+
+
+    /**
+     * Scans a grid and collects coordinates of all remaining SHIP cells.
+     * Used to reveal hidden ships to the player on LOSS.
+     *
+     * @param grid the grid to scan as lowercase strings
+     * @return int[][] of [row, col] pairs for every "ship" cell, or null if none found
+     */
+    private int[][] collectRemainingShips(String[][] grid) {
+        List<int[]> ships = new ArrayList<>();
+        for (int r = 0; r < grid.length; r++) {
+            for (int c = 0; c < grid[r].length; c++) {
+                if ("ship".equals(grid[r][c])) {
+                    ships.add(new int[]{r, c});
+                }
+            }
+        }
+        return ships.isEmpty() ? null : ships.toArray(new int[0][]);
     }
 }

@@ -59,5 +59,7 @@ public record AttackResponseDTO(
         int computerCol,
         String computerMessage,
         int[][] sunkCells,
-        int[][] homeSunkCells
+        int[][] homeSunkCells,
+        int[][] revealedComputerShips,
+        int[][] revealedPlayerShips
 ) { }

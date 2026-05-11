@@ -201,7 +201,8 @@ public class BattleshipService {
                 turn.computerCol(),
                 computerMessage,
                 shipToCoords(turn.sunkShip()),
-                shipToCoords(turn.homeSunkShip())
+                shipToCoords(turn.homeSunkShip()),
+                null, null
         );
     }
 
