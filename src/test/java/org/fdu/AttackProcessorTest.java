@@ -181,8 +181,8 @@ void computerStaysOnPartialHit() {
         new Ship(List.of(new int[]{5, 5}, new int[]{5, 6}))
     );
 
-    PlayerDTO h = new PlayerDTO(trackingGrid, homeGrid, 10, GameStatus.IN_PROGRESS, null, homeShips);
-    TurnResultDTO result = processor.processAttack(0, 0, h, computer());
+    PlayerDTO h = new PlayerDTO(trackingGrid, homeGrid, GameStatus.IN_PROGRESS, null, homeShips);
+    TurnResultDTO result = processor.processAttack(0, 0, h, computer(), Difficulty.SMART);
 
     int r = result.computerRow();
     int c = result.computerCol();
