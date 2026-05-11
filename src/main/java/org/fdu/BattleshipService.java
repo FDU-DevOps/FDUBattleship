@@ -128,7 +128,7 @@ public class BattleshipService {
 
         return new AttackResponseDTO(
                 null, updatedGrid, status, "Ship placed",
-                NO_COORD, NO_COORD, "", null, null
+                NO_COORD, NO_COORD, "", null, null, null, null
         );
     }
 
