@@ -32,7 +32,7 @@ public class AttackProcessor implements Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(AttackProcessor.class);
 
     /**
-     * Processes a single attack from the player against the computer's board,
+     * Processes a single attack from the player against the computer's board
      * then fires the computer's random counter-attack against the human's home grid.
      * <p>
      * After a HIT, checks whether the struck ship is now fully sunk.
